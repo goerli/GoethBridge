@@ -4,7 +4,9 @@ this is a go implementation of a generic bridge between blockchains. the bridge 
 
 ### todo
 *implement log filtering
+
 *implement posting of transactions
+
 *implement support for non-ethereum based blockchains
 
 ### requirements
