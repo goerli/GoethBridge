@@ -1,4 +1,8 @@
 # Multi Directional Bridge
 
-Follow the development repo on https://gitlab.com/chainsafesystems/bridge
+### requirements
+go 1.9.1
 
+grpc
+
+`go get google.golang.org/grpc`
