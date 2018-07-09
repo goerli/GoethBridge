@@ -1,31 +1,34 @@
 package main
 
 import (
-	//"fmt"
-	"log"
+	"fmt"
+	//"log"
 	//"context"
 	//"time"
-	"net/rpc"
+	//"net/rpc"
+	"net/http"
 	//"github.com/ethereum/go-ethereum/rpc"
 	//"math/big"
+	"bytes"
+	"io/ioutil"
 )
 
 func main() {
 	// hard coded to geth running at address:port
-	client, err := rpc.Dial("tcp", "127.0.0.1:8545")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer client.Close()
+	url := "http://127.0.0.1:8545"
 
-	//subch := make(chan *big.Int)
-	var reply int
-	args := 0
-	err = client.Call("eth_gasLimit", args, &reply)
+	var jsonStr = []byte(`{"jsonrpc":"2.0","method":"eth_coinbase","params":[],"id":71}`)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
-	//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	//defer cancel()
+	defer resp.Body.Close()
 
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
 }
