@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"time"
-	"encoding/json"
+	"jsonparser"
 )
 
 type Resp struct {
@@ -34,19 +34,12 @@ func main() {
 	fmt.Println("response Headers:", resp.Header)
 	body, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println("response Body:", string(body))
-	//jsonBody := []byte(string(body))
+	jsonBody := []byte(string(body))
 
-	var jsonBody = []byte(`
-		{"jsonrpc":"2.0","id":71,"result":"0x7eec0a227d852c28d4141c212578292b"}
-	`)
+	var res, _, _,  _ = jsonparser.Get(jsonBody, "result")
+	fmt.Println("filter result: %s\n", string(res))
 
-	var respBody Resp
-	err = json.Unmarshal(jsonBody, &respBody)
-	if err != nil { fmt.Println(err) }
-	fmt.Println(respBody)
-
-        //jsonStr = []byte(`{"jsonrpc":"2.0","method":"eth_getFilterChanges","params":[],"id":71}`)
-	jsonStr = []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":71}`)
+        jsonStr = []byte(`{"jsonrpc":"2.0","method":"eth_getFilterChanges","params":[],"id":71}`)
 	ticker := time.NewTicker(500 * time.Millisecond)
 	go func() {
 		for t := range ticker.C {
