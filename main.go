@@ -30,7 +30,7 @@ type LogParams struct {
 }
 
 func getLogs(url string, jsonParams string, client *http.Client) (*http.Response, error) {
-     	jsonStr := `{"jsonrpc":"2.0","method":"eth_getLogs","params":[` + string(jsonParams) + `],"id":74}`
+	jsonStr := `{"jsonrpc":"2.0","method":"eth_getLogs","params":[` + jsonParams + `],"id":74}`
         jsonBytes := []byte(jsonStr)
         fmt.Println(string(jsonBytes))
 
@@ -86,6 +86,11 @@ func main() {
 	go func() {
 		for t := range ticker.C {
 			fmt.Println(t)
+
+                        params.FromBlock, err = getBlockNumber(url, client)
+                        fmt.Println("from block: " + params.FromBlock)
+                        jsonParams, _ := json.Marshal(params)
+                        fmt.Println("jsonParams: " + string(jsonParams))
 			resp, _ := getLogs(url, string(jsonParams), client)
 			defer resp.Body.Close()
 
@@ -93,13 +98,9 @@ func main() {
 			fmt.Println("response Headers:", resp.Header)
 			body, _ := ioutil.ReadAll(resp.Body)
 			fmt.Println("response Body:", string(body))
-
-			params.FromBlock, err = getBlockNumber(url, client)
-			jsonParams, _ := json.Marshal(params)
-			fmt.Println(string(jsonParams))
 		}
 	}()
 
-	time.Sleep(60 * time.Second)
+	time.Sleep(300 * time.Second)
 	ticker.Stop()
 }
