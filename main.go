@@ -47,6 +47,20 @@ func getLogs(url string, jsonParams string, client *http.Client) (*http.Response
 	return resp, nil
 }
 
+// this function makes the rpc call "eth_getTranscationReceipt" passing in the txHash
+func getTxReceipt(txHash string, url string, client *http.Client) (*http.Response, error) {
+        jsonStr := `{"jsonrpc":"2.0","method":"eth_getTransactionReceipt","params":["` + txHash + `"],"id":74}`
+        jsonBytes := []byte(jsonStr)
+        fmt.Println(string(jsonBytes))
+
+        req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
+        req.Header.Set("Content-Type", "application/json")
+        resp, err := client.Do(req)
+        if err != nil { return nil, err }
+        return resp, nil
+}
+
+
 // this function parses jsonStr for the result entry and returns its value as a string
 func parseJsonForResult(jsonStr string) (string) {
     	jsonBody := []byte(string(jsonStr))
@@ -84,7 +98,7 @@ func getBlockNumber(url string, client *http.Client) (string, error) {
 }
 
 func main() {
-	// hard coded to geth running at address:port
+	// hard coded to client running at address:port
 	url := "http://127.0.0.1:8545"
     	client := &http.Client{}
 	var params LogParams
@@ -95,10 +109,10 @@ func main() {
 		for t := range ticker.C {
 			fmt.Println(t)
 
-            params.FromBlock, _ = getBlockNumber(url, client)
+			params.FromBlock, _ = getBlockNumber(url, client)
 			fmt.Println("getting logs from block number: " + params.FromBlock + "\n")
-            jsonParams, _ := json.Marshal(params)
-            //fmt.Println("jsonParams: " + string(jsonParams))
+			jsonParams, _ := json.Marshal(params)
+            		//fmt.Println("jsonParams: " + string(jsonParams))
 
 			//get logs from params.FromBlock
 			resp, _ := getLogs(url, string(jsonParams), client)
@@ -118,9 +132,10 @@ func main() {
 			// if there are new logs, parse for event info
 			if len(logsResult) != 2 {
 				fmt.Println("new logs found")
-				txHash := parseJsonForEntry(logsResult, "transactionHash")
+				txHash := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
 				fmt.Println(txHash + "\n")
 			}
+
 		}
 	}()
 
