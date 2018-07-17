@@ -4,11 +4,14 @@
 * eventually, we want the bridge to have multiple sides,
 * so that a user can specify which chain they want to transfer
 * their fuel or tokens to,
+* insted of home and foreign, we will have chain 1, chain 2, 
+* chain 3, ... etc.
 */
 {
 	"hone": {
 		"url": "http://127.0.0.1:8545",
 		"contractAddr": "0x0",
+		"safeAddr": "0x0",
 		"depositEvent": "Deposit()",
 		"withdrawEvent": "Withdraw()",
 		"gasPrice": "10000000"
@@ -16,6 +19,7 @@
 	"foreign": {
 		"url": "http://127.0.0.1:7545",
 		"contractAddr": "0x0",
+		"safeAddr": "0x0",
 		"depositEvent": "Deposit()",
 		"withdrawEvent": "Withdraw()",
 		"gasPrice": "10000000"
