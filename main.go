@@ -38,61 +38,61 @@ type LogParams struct {
 func getLogs(url string, jsonParams string, client *http.Client) (*http.Response, error) {
 	jsonStr := `{"jsonrpc":"2.0","method":"eth_getLogs","params":[` + jsonParams + `],"id":74}`
 	jsonBytes := []byte(jsonStr)
-    	fmt.Println(string(jsonBytes))
+	fmt.Println(string(jsonBytes))
 
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
-    	req.Header.Set("Content-Type", "application/json")
-    	resp, err := client.Do(req)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
 	if err != nil { return nil, err }
 	return resp, nil
 }
 
 // this function makes the rpc call "eth_getTranscationReceipt" passing in the txHash
 func getTxReceipt(txHash string, url string, client *http.Client) (*http.Response, error) {
-        jsonStr := `{"jsonrpc":"2.0","method":"eth_getTransactionReceipt","params":["` + txHash + `"],"id":74}`
-        jsonBytes := []byte(jsonStr)
-        fmt.Println(string(jsonBytes))
+    jsonStr := `{"jsonrpc":"2.0","method":"eth_getTransactionReceipt","params":["` + txHash + `"],"id":74}`
+    jsonBytes := []byte(jsonStr)
+    fmt.Println(string(jsonBytes))
 
-        req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
-        req.Header.Set("Content-Type", "application/json")
-        resp, err := client.Do(req)
-        if err != nil { return nil, err }
-        return resp, nil
+    req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
+    req.Header.Set("Content-Type", "application/json")
+    resp, err := client.Do(req)
+    if err != nil { return nil, err }
+    return resp, nil
 }
 
 
 // this function parses jsonStr for the result entry and returns its value as a string
 func parseJsonForResult(jsonStr string) (string) {
-    	jsonBody := []byte(string(jsonStr))
-    	res, _, _, _ := jsonparser.Get(jsonBody, "result")
+	jsonBody := []byte(string(jsonStr))
+	res, _, _, _ := jsonparser.Get(jsonBody, "result")
 	return string(res)
 }
 
 // this function parses jsonStr for the entry "get" and returns its value as a string
 func parseJsonForEntry(jsonStr string, get string) (string) {
 	jsonBody := []byte(string(jsonStr))
-    	res, _, _, _ := jsonparser.Get(jsonBody, get)
-    	return string(res)
+	res, _, _, _ := jsonparser.Get(jsonBody, get)
+	return string(res)
 }
 
 // this function gets the current block number by calling "eth_blockNumber"
 func getBlockNumber(url string, client *http.Client) (string, error) {
-    	var jsonBytes = []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}`)
-    	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
-    	req.Header.Set("Content-Type", "application/json")
+	var jsonBytes = []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}`)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
+	req.Header.Set("Content-Type", "application/json")
 	blockNumResp, err := client.Do(req)
-    	if err != nil {
-           	return "", err
-    	}
-    	defer blockNumResp.Body.Close()
+	if err != nil {
+       	return "", err
+	}
+	defer blockNumResp.Body.Close()
 
-    	// print out response of eth_blockNumber
-    	//fmt.Println("response Status:", blockNumResp.Status)
-    	//fmt.Println("response Headers:", blockNumResp.Header)
-    	blockNumBody, _ := ioutil.ReadAll(blockNumResp.Body)
-    	//fmt.Println("response Body:", string(blockNumBody))
+	// print out response of eth_blockNumber
+	//fmt.Println("response Status:", blockNumResp.Status)
+	//fmt.Println("response Headers:", blockNumResp.Header)
+	blockNumBody, _ := ioutil.ReadAll(blockNumResp.Body)
+	//fmt.Println("response Body:", string(blockNumBody))
 
-    	// parse json for result
+	// parse json for result
 	startBlock := parseJsonForResult(string(blockNumBody))
 	return startBlock, nil
 }
@@ -100,7 +100,7 @@ func getBlockNumber(url string, client *http.Client) (string, error) {
 func main() {
 	// hard coded to client running at address:port
 	url := "http://127.0.0.1:8545"
-    	client := &http.Client{}
+    client := &http.Client{}
 	var params LogParams
 
 	// poll filter every 500ms for changes
