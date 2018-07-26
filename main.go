@@ -164,9 +164,7 @@ func readAbi() {
 	fmt.Println("contract creation event id: ", CreationId)
 }
 
-var exit = make(chan bool)
-
-func listen(urls []string) {
+func listen(urls []string, chains []string) {
 
 	var params LogParams
 	logsFound := make(map[string]bool)
@@ -176,7 +174,7 @@ func listen(urls []string) {
 	// poll filter every 500ms for changes
 	ticker := time.NewTicker(100 * time.Millisecond)
 	for i := 0; i < len(urls); i++ {
-		go func(url string) {
+		go func(url string, chain string) {
 			client := &http.Client{}
 			fmt.Println("listening at: " + url)
 			for t := range ticker.C{
@@ -211,7 +209,7 @@ func listen(urls []string) {
 					//fmt.Println(txHash + "\n")
 					if logsFound[txHash] != true { 
 						logsFound[txHash] = true
-						fmt.Println("\nnew logs found!")
+						fmt.Println("\nnew logs found for chain", chain)
 
 						//logs <- logsResult
 						//readLogs(logs)
@@ -260,18 +258,12 @@ func listen(urls []string) {
 					}
 				}
 			}
-		}(urls[i])
+		}(urls[i], chains[i])
 	}
 
 	// bridge timeout. eventually, change so it never times out
 	time.Sleep(6000 * time.Second)
 	ticker.Stop()
-}
-
-func readLogs(logs chan string) {
-	log := <-logs
-	fmt.Println(log)
-	exit<-true
 }
 
 func main() {
@@ -351,5 +343,5 @@ func main() {
 	// fmt.Println(s)
 
 	fmt.Println("\nlistening for events...")
-	listen(chainUrls)
+	listen(chainUrls, chains)
 }
