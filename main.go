@@ -12,6 +12,7 @@ import (
 	//"encoding/hex"
 	"path/filepath"
 	"strings"
+	"log"
 
 	//"github.com/ethereum/go-ethereum"
     "github.com/ethereum/go-ethereum/accounts/abi"
@@ -67,17 +68,23 @@ func getTxReceipt(txHash string, url string, client *http.Client) (*http.Respons
 
 
 // this function parses jsonStr for the result entry and returns its value as a string
-func parseJsonForResult(jsonStr string) (string) {
+func parseJsonForResult(jsonStr string) (string, error) {
 	jsonBody := []byte(string(jsonStr))
-	res, _, _, _ := jsonparser.Get(jsonBody, "result")
-	return string(res)
+	res, _, _, err := jsonparser.Get(jsonBody, "result")
+	if err != nil {
+		return "", err
+	}
+	return string(res), nil
 }
 
 // this function parses jsonStr for the entry "get" and returns its value as a string
-func parseJsonForEntry(jsonStr string, get string) (string) {
+func parseJsonForEntry(jsonStr string, get string) (string, error) {
 	jsonBody := []byte(string(jsonStr))
-	res, _, _, _ := jsonparser.Get(jsonBody, get)
-	return string(res)
+	res, _, _, err := jsonparser.Get(jsonBody, get)
+	if err != nil {
+		return "", err
+	}
+	return string(res), nil
 }
 
 // this function gets the current block number by calling "eth_blockNumber"
@@ -98,8 +105,22 @@ func getBlockNumber(url string, client *http.Client) (string, error) {
 	//fmt.Println("response Body:", string(blockNumBody))
 
 	// parse json for result
-	startBlock := parseJsonForResult(string(blockNumBody))
+	startBlock, err := parseJsonForResult(string(blockNumBody))
+	if err != nil {
+		return "", nil
+	}
 	return startBlock, nil
+}
+
+func readDepositData(data string) (string, string) {
+	length := len(data)
+	if length == 130 { // '0x' + 64 + 64
+		recipient := "0x" + data[26:66]
+		value := data[66:130]
+		return recipient, value
+	} else {
+		return "", ""
+	}
 }
 
 func main() {
@@ -114,7 +135,11 @@ func main() {
 	    fmt.Println("Failed to read file:", err)
 	}
 
-	fileAbi := parseJsonForEntry(string(file), "abi")
+	fileAbi, err := parseJsonForEntry(string(file), "abi")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	bridgeabi, err := abi.JSON(strings.NewReader(fileAbi))
 	if err != nil {
 	    fmt.Println("Invalid abi:", err)
@@ -126,12 +151,25 @@ func main() {
 	if err != nil {
 		fmt.Println("Failed to read file:", err)	
 	}
-	homeStr := parseJsonForEntry(string(file), "home")
-	homeAddr := parseJsonForEntry(homeStr, "contractAddr")
+
+	homeStr, err := parseJsonForEntry(string(file), "home")
+	if err != nil {
+		log.Fatal(err)
+	}
+	homeAddr, err := parseJsonForEntry(homeStr, "contractAddr")
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println("home contract address: ", homeAddr)
 
-	foreignStr := parseJsonForEntry(string(file), "foreign")
-	foreignAddr := parseJsonForEntry(foreignStr, "contractAddr")
+	foreignStr, err := parseJsonForEntry(string(file), "foreign")
+	if err != nil {
+		log.Fatal(err)
+	}
+	foreignAddr, err := parseJsonForEntry(foreignStr, "contractAddr")
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println("foreign contract address: ", foreignAddr, "\n")
 
 	// checking for abi methods
@@ -152,6 +190,7 @@ func main() {
 	creationHash := creationEvent.Id()
 	creationId := creationHash.Hex()
 	fmt.Println("contract creation event id: ", creationId)
+	fmt.Println()
 
 	// poll filter every 500ms for changes
 	ticker := time.NewTicker(500 * time.Millisecond)
@@ -175,7 +214,10 @@ func main() {
  
 			// parse for getLogs result
 			//logsResult := parseJsonForResult(string(body))
-			logsResult := parseJsonForEntry(string(body), "result")
+			logsResult, err := parseJsonForEntry(string(body), "result")
+			if err != nil {
+				fmt.Println(err)
+			}
 			fmt.Println("logsResult: " + logsResult + "\n")
 			//fmt.Println(len(logsResult))
 
@@ -186,26 +228,45 @@ func main() {
 				//fmt.Println(txHash + "\n")
 
 				// get logs contract address
-				address := parseJsonForEntry(logsResult[1:len(logsResult)-1], "address")
+				address, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "address")
+				if err != nil {
+					fmt.Println(err)
+				}
 				// this is not actually a good way to listen for events from a  contract
 				// this could be used to confirm a log, but for listening to events from
 				// one contract, we would specify the address in our call to eth_getLogs
-				if strings.Compare(address[1:43], homeAddr) == 0 {
+				fmt.Println("contract addr: ", address)
+				fmt.Println("length of address: ", len(address))
+				if strings.Compare(address[1:41], homeAddr) == 0 {
 					fmt.Println("home bridge contract event heard")
-				} else if strings.Compare(address[1:43], foreignAddr) == 0 {
+				} else if strings.Compare(address[1:41], foreignAddr) == 0 {
 					fmt.Println("foreign bridge contract event heard")
 				}
 
 				// read topics of log
-				topics := parseJsonForEntry(logsResult[1:len(logsResult)-1], "topics")
+				topics,err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "topics")
+				if err != nil {
+					fmt.Println(err)
+				}
 				fmt.Println("topics: ", topics[2:68])
 				//fmt.Println("length of topics: ", len(topics)-4) len = 66: 0x + 64 hex chars = 32 bytes
 
 				if strings.Compare(topics[2:68],depositId) == 0 { 
-					fmt.Println("*** deposit event ", topics[2:68], "\n")
+					fmt.Println("*** deposit event ", topics[2:68])
+					data, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "data")
+					if err != nil {
+						fmt.Println(nil)
+					}
+					fmt.Println("length of data: ", len(data))
+					fmt.Println("data: ", data)
+					receiver, value := readDepositData(data)
+					fmt.Println("receiver: ", receiver) 
+					fmt.Println("value: ", value) // in hexidecimal
 			 	} else if strings.Compare(topics[2:68],creationId) == 0 {
 					fmt.Println("*** bridge contract creation\n")
 				}
+
+				fmt.Println()
 			}
 
 		}

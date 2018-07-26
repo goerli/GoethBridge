@@ -2,7 +2,8 @@ var Bridge = artifacts.require("Bridge");
 
 contract('Bridge', function(accounts) {
 	var addrA = accounts[0]
-
+	console.log("addrA: " + addrA)
+	
 	it("should deploy", async() => {
 		bridge = await Bridge.deployed()
 		console.log("\tbridge contract address: " + bridge.address)
