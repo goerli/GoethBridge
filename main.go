@@ -137,18 +137,16 @@ func main() {
 
 	flag.Parse()
 	configStr := *configPtr
-	fmt.Println("config: ", configStr)
+	fmt.Println("config path: ", configStr)
 
 	verbose := *verbosePtr
-	fmt.Println("verbose: ", verbose)
+	if verbose { fmt.Println("verbose: ", verbose) }
 
 	clientAddr := *urlPtr
 	port := *portPtr
 	//fmt.Println("url: ", clientAddr, ":", port)
 
-	// hard coded to client running at address:port
-	//url := "http://127.0.0.1:8545
-	url := "http://"+clientAddr + ":" + port
+	url := "http://" + clientAddr + ":" + port
 	fmt.Println("listening at: " + url)
     client := &http.Client{}
 	var params LogParams
@@ -209,16 +207,18 @@ func main() {
 	depositEvent := bridgeEvents["Deposit"]
 	depositHash := depositEvent.Id()
 	depositId := depositHash.Hex()
-	fmt.Println("deposit event id: ", depositId) // this is the deposit event to watch for
+	//fmt.Println("deposit event id: ", depositId) // this is the deposit event to watch for
 
 	creationEvent := bridgeEvents["ContractCreation"]
 	creationHash := creationEvent.Id()
 	creationId := creationHash.Hex()
-	fmt.Println("contract creation event id: ", creationId)
-	fmt.Println()
+	//fmt.Println("contract creation event id: ", creationId)
+	fmt.Println("listening for events...")
+
+	logsFound := make(map[string]bool)
 
 	// poll filter every 500ms for changes
-	ticker := time.NewTicker(500 * time.Millisecond)
+	ticker := time.NewTicker(100 * time.Millisecond)
 	go func() {
 		for t := range ticker.C {
 			if verbose { fmt.Println(t) }
@@ -248,55 +248,56 @@ func main() {
 
 			// if there are new logs, parse for event info
 			if len(logsResult) != 2 {
-				fmt.Println("new logs found")
-				//txHash := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
+				fmt.Println("new logs found!")
+				txHash, _ := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
 				//fmt.Println(txHash + "\n")
+				if logsFound[txHash] != true { 
+					logsFound[txHash] = true
 
-				// get logs contract address
-				address, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "address")
-				if err != nil {
-					fmt.Println(err)
-				}
-				// this is not actually a good way to listen for events from a  contract
-				// this could be used to confirm a log, but for listening to events from
-				// one contract, we would specify the address in our call to eth_getLogs
-				fmt.Println("contract addr: ", address)
-				fmt.Println("length of address: ", len(address))
-				if strings.Compare(address[1:41], homeAddr) == 0 {
-					fmt.Println("home bridge contract event heard")
-				} else if strings.Compare(address[1:41], foreignAddr) == 0 {
-					fmt.Println("foreign bridge contract event heard")
-				}
-
-				// read topics of log
-				topics,err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "topics")
-				if err != nil {
-					fmt.Println(err)
-				}
-				fmt.Println("topics: ", topics[2:68])
-				//fmt.Println("length of topics: ", len(topics)-4) len = 66: 0x + 64 hex chars = 32 bytes
-
-				if strings.Compare(topics[2:68],depositId) == 0 { 
-					fmt.Println("*** deposit event ", topics[2:68])
-					data, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "data")
+					// get logs contract address
+					address, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "address")
 					if err != nil {
-						fmt.Println(nil)
+						fmt.Println(err)
 					}
-					fmt.Println("length of data: ", len(data))
-					fmt.Println("data: ", data)
-					receiver, value := readDepositData(data)
-					fmt.Println("receiver: ", receiver) 
-					fmt.Println("value: ", value) // in hexidecimal
-			 	} else if strings.Compare(topics[2:68],creationId) == 0 {
-					fmt.Println("*** bridge contract creation\n")
-				}
+					// this is not actually a good way to listen for events from a  contract
+					// this could be used to confirm a log, but for listening to events from
+					// one contract, we would specify the address in our call to eth_getLogs
+					fmt.Println("contract addr: ", address)
+					//fmt.Println("length of address: ", len(address))
+					if strings.Compare(address[1:41], homeAddr) == 0 {
+					fmt.Println("home bridge contract event heard")
+					} else if strings.Compare(address[1:41], foreignAddr) == 0 {
+						fmt.Println("foreign bridge contract event heard")
+					}
 
-				fmt.Println()
+					// read topics of log
+					topics,err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "topics")
+					if err != nil {
+						fmt.Println(err)
+					}
+					fmt.Println("topics: ", topics[2:68])
+					//fmt.Println("length of topics: ", len(topics)-4) len = 66: 0x + 64 hex chars = 32 bytes
+
+					if strings.Compare(topics[2:68],depositId) == 0 { 
+						fmt.Println("*** deposit event ", topics[2:68])
+						data, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "data")
+						if err != nil {
+							fmt.Println(nil)
+						}
+						//fmt.Println("length of data: ", len(data))
+						//fmt.Println("data: ", data)
+						receiver, value := readDepositData(data)
+						fmt.Println("receiver: ", receiver) 
+						fmt.Println("value: ", value) // in hexidecimal
+				 	} else if strings.Compare(topics[2:68],creationId) == 0 {
+						fmt.Println("*** bridge contract creation\n")
+					}
+				}
 			}
 
 		}
 	}()
 
-	time.Sleep(300 * time.Second)
+	time.Sleep(6000 * time.Second)
 	ticker.Stop()
 }
