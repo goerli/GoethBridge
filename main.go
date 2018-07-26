@@ -103,7 +103,7 @@ func getBlockNumber(url string, client *http.Client) (string, error) {
 	//fmt.Println("response Status:", blockNumResp.Status)
 	//fmt.Println("response Headers:", blockNumResp.Header)
 	blockNumBody, _ := ioutil.ReadAll(blockNumResp.Body)
-	//fmt.Println("response Body:", string(blockNumBody))
+	//fmt.Println("responnse Body:", string(blockNumBody))
 
 	// parse json for result
 	startBlock, err := parseJsonForResult(string(blockNumBody))
@@ -125,41 +125,15 @@ func readDepositData(data string) (string, string, string) {
 	}
 }
 
-func main() {
-	/* flags */
+/* global vars */
+// flags
+var verbose bool
+var chains []string 
+// events to listen for
+var DepositId string
+var CreationId string
 
-	// -v
-	// default = false
-	// if verbosity = true, print out waiting for logs
-	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
-	configPtr := flag.String("config", "./config.json", "a string of the path to the config file") 
-
-	// @todo: read url and port from config file.
-	urlPtr := flag.String("url", "127.0.0.1", "a string of the url of the client")
-	portPtr := flag.String("port", "8545", "a string of the port of the client")
-
-	flag.Parse()
-	configStr := *configPtr
-	fmt.Println("config path: ", configStr)
-
-	verbose := *verbosePtr
-	if verbose { fmt.Println("verbose: ", verbose) }
-
-	chains := flag.Args()
-	if len(chains) == 0 {
-		chains = append(chains,"33")
-	}
-	fmt.Println("chains to connect to: ", chains)
-
-	clientAddr := *urlPtr
-	port := *portPtr
-	//fmt.Println("url: ", clientAddr, ":", port)
-
-	url := "http://" + clientAddr + ":" + port
-	fmt.Println("listening at: " + url)
-    client := &http.Client{}
-	var params LogParams
-
+func readAbi() {
 	// read bridge contract abi
 	path, _ := filepath.Abs("./truffle/build/contracts/Bridge.json")
 	file, err := ioutil.ReadFile(path)
@@ -177,48 +151,21 @@ func main() {
 	    fmt.Println("Invalid abi:", err)
 	}
 
-	// config file reading
-	path, _ = filepath.Abs(configStr)
-	file, err = ioutil.ReadFile(path)
-	if err != nil {
-		fmt.Println("Failed to read file:", err)	
-	}
-
-	for i := 0; i < len(chains); i++ {
-		chainStr, err := parseJsonForEntry(string(file), chains[i])
-		if err != nil {
-			fmt.Println("could not find chain in config file")
-			log.Fatal(err)
-		}
-
-		contractAddr, err := parseJsonForEntry(chainStr, "contractAddr")
-		if err != nil {
-			fmt.Println("could not find contractAddr in config file")
-			log.Fatal(err)
-		}
-		fmt.Println("contract address of chain", chains[i], ":", contractAddr)
-	}
-
-	// checking for abi methods
-	// bridgeMethods := bridgeabi.Methods
-	// transferMethod := bridgeMethods["transfer"]
-	// transferSig := transferMethod.Sig()
-	// s := string(transferSig[:])
-	// fmt.Println(s)
-
-	// checking abi for events
+		// checking abi for events
 	bridgeEvents := bridgeabi.Events
 	depositEvent := bridgeEvents["Deposit"]
 	depositHash := depositEvent.Id()
-	depositId := depositHash.Hex()
-	//fmt.Println("deposit event id: ", depositId) // this is the deposit event to watch for
+	DepositId = depositHash.Hex()
+	fmt.Println("deposit event id: ", DepositId) // this is the deposit event to watch for
 
 	creationEvent := bridgeEvents["ContractCreation"]
 	creationHash := creationEvent.Id()
-	creationId := creationHash.Hex()
-	//fmt.Println("contract creation event id: ", creationId)
-	fmt.Println("listening for events...")
+	CreationId = creationHash.Hex()
+	fmt.Println("contract creation event id: ", CreationId)
+}
 
+func listen(url string, client *http.Client) {
+	var params LogParams
 	logsFound := make(map[string]bool)
 
 	// poll filter every 500ms for changes
@@ -282,7 +229,7 @@ func main() {
 					fmt.Println("topics: ", topics[2:68])
 					//fmt.Println("length of topics: ", len(topics)-4) len = 66: 0x + 64 hex chars = 32 bytes
 
-					if strings.Compare(topics[2:68],depositId) == 0 { 
+					if strings.Compare(topics[2:68],DepositId) == 0 { 
 						fmt.Println("*** deposit event ", topics[2:68])
 						data, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "data")
 						if err != nil {
@@ -294,7 +241,7 @@ func main() {
 						fmt.Println("receiver: ", receiver) 
 						fmt.Println("value: ", value) // in hexidecimal
 						fmt.Println("to chain: ", toChain) // in hexidecimal
-				 	} else if strings.Compare(topics[2:68],creationId) == 0 {
+				 	} else if strings.Compare(topics[2:68],CreationId) == 0 {
 						fmt.Println("*** bridge contract creation\n")
 					}
 				}
@@ -306,4 +253,76 @@ func main() {
 	// bridge timeout. eventually, change so it never times out
 	time.Sleep(6000 * time.Second)
 	ticker.Stop()
+}
+
+func main() {
+	/* read abi of contract in truffle folder */
+	readAbi()
+
+	/* flags */
+
+	// -v
+	// default = false
+	// if verbosity = true, print out waiting for logs
+	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
+	configPtr := flag.String("config", "./config.json", "a string of the path to the config file") 
+
+	// @todo: read url and port from config file.
+	urlPtr := flag.String("url", "127.0.0.1", "a string of the url of the client")
+	portPtr := flag.String("port", "8545", "a string of the port of the client")
+
+	flag.Parse()
+	configStr := *configPtr
+	fmt.Println("config path: ", configStr)
+
+	verbose := *verbosePtr
+	if verbose { fmt.Println("verbose: ", verbose) }
+
+	chains := flag.Args()
+	if len(chains) == 0 {
+		chains = append(chains,"33")
+	}
+	fmt.Println("chains to connect to: ", chains)
+
+	clientAddr := *urlPtr
+	port := *portPtr
+	//fmt.Println("url: ", clientAddr, ":", port)
+
+	url := "http://" + clientAddr + ":" + port
+	fmt.Println("listening at: " + url)
+    client := &http.Client{}
+
+	// config file reading
+	path, _ := filepath.Abs(configStr)
+	file, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Println("Failed to read file:", err)	
+	}
+
+	// read config file for each chain id
+	for i := 0; i < len(chains); i++ {
+		chainStr, err := parseJsonForEntry(string(file), chains[i])
+		if err != nil {
+			fmt.Println("could not find chain in config file")
+			log.Fatal(err)
+		}
+
+		contractAddr, err := parseJsonForEntry(chainStr, "contractAddr")
+		if err != nil {
+			fmt.Println("could not find contractAddr in config file")
+			log.Fatal(err)
+		}
+		fmt.Println("contract address of chain", chains[i], ":", contractAddr)
+	}
+
+	// checking for abi methods
+	// bridgeMethods := bridgeabi.Methods
+	// transferMethod := bridgeMethods["transfer"]
+	// transferSig := transferMethod.Sig()
+	// s := string(transferSig[:])
+	// fmt.Println(s)
+
+	fmt.Println("listening for events...")
+
+	listen(url, client)
 }
