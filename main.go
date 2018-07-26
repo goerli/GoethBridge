@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"log"
+	"flag"
 
 	//"github.com/ethereum/go-ethereum"
     "github.com/ethereum/go-ethereum/accounts/abi"
@@ -124,11 +125,30 @@ func readDepositData(data string) (string, string) {
 }
 
 func main() {
+	/* flags */
+
+	// -v
+	// default = false
+	// if verbosity = true, print out waiting for logs
+	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
+	// flag.Parse()
+
+	// -config
+	// default = "./config.json"
+	configPtr := flag.String("config", "./config.json", "a string of the path to the config file")
+	flag.Parse()
+	configStr := *configPtr
+	fmt.Println("config: ", configStr)
+
+	verbose := *verbosePtr
+	fmt.Println("verbose: ", verbose)
+
 	// hard coded to client running at address:port
 	url := "http://127.0.0.1:8545"
     client := &http.Client{}
 	var params LogParams
 
+	// read bridge contract abi
 	path, _ := filepath.Abs("./truffle/build/contracts/Bridge.json")
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -196,10 +216,10 @@ func main() {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	go func() {
 		for t := range ticker.C {
-			fmt.Println(t)
+			if verbose { fmt.Println(t) }
 
 			params.FromBlock, _ = getBlockNumber(url, client)
-			fmt.Println("getting logs from block number: " + params.FromBlock + "\n")
+			if verbose { fmt.Println("getting logs from block number: " + params.FromBlock + "\n") }
 			jsonParams, _ := json.Marshal(params)
             //fmt.Println("jsonParams: " + string(jsonParams))
 
@@ -218,7 +238,7 @@ func main() {
 			if err != nil {
 				fmt.Println(err)
 			}
-			fmt.Println("logsResult: " + logsResult + "\n")
+			if verbose { fmt.Println("logsResult: " + logsResult + "\n") }
 			//fmt.Println(len(logsResult))
 
 			// if there are new logs, parse for event info
