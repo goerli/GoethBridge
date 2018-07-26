@@ -3,7 +3,7 @@ var Bridge = artifacts.require("Bridge");
 contract('Bridge', function(accounts) {
 	var addrA = accounts[0]
 	console.log("addrA: " + addrA)
-	
+
 	it("should deploy", async() => {
 		bridge = await Bridge.deployed()
 		console.log("\tbridge contract address: " + bridge.address)
@@ -14,7 +14,9 @@ contract('Bridge', function(accounts) {
 
 	it("should make a ether deposit", async() => {
 		let _val = 17
-		deposit = await bridge.sendTransaction({from: addrA, value: _val})
+		let chainId = 33
+		//deposit = await bridge.sendTransaction({from: addrA, value: _val})
+		deposit = await bridge.deposit(chainId, {from: addrA, value: _val})
 	})
 	
 	// it("should call transfer", async() => {

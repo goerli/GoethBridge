@@ -1,16 +1,16 @@
 *
 * configuration file for the bridge
-* initially, the bridge is two-sided: home and foreign.
-* eventually, we want the bridge to have multiple sides,
+* generally, bridges are two-sided: home and foreign.
+* however, we want this bridge to have multiple sides,
 * so that a user can specify which chain they want to transfer
-* their fuel or tokens to,
-* insted of home and foreign, we will have chain 1, chain 2, 
+* their fuel or tokens to.
+* instead of home and foreign, we will have chain 1, chain 2, 
 * chain 3, ... etc.
 */
 
 
 {
-	"home": {
+	"1": {
 		"url": "http://127.0.0.1:8545",
 		"contractAddr": "0x0",
 		"safeAddr": "0x0",
@@ -18,7 +18,15 @@
 		"withdrawEvent": "Withdraw()",
 		"gasPrice": "10000000"
 	},
-	"foreign": {
+	"33": {
+		"url": "http://127.0.0.1:8545",
+		"contractAddr": "0x0",
+		"safeAddr": "0x0",
+		"depositEvent": "Deposit()",
+		"withdrawEvent": "Withdraw()",
+		"gasPrice": "10000000"
+	},
+	"34": {
 		"url": "http://127.0.0.1:7545",
 		"contractAddr": "0x0",
 		"safeAddr": "0x0",

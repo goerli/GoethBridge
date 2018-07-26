@@ -26,12 +26,12 @@ contract Bridge {
 	// and the value of the deposit.
 	// @todo: add `address _toChain` so that the user can specify which
 	// chain they wish to withdraw on. this makes the bridge "multi-directional.
-	event Deposit(address _receiver, uint _value); 
+	event Deposit(address _receiver, uint _value, uint _toChain); 
 	event DepositErc20(address _receiver, uint _value); 
 
 	// @todo: similarly to the Deposit event, we eventually wish to add
 	// a `address _fromChain` argument
-	event Withdraw(address _receiver, uint _value); 
+	event Withdraw(address _receiver, uint _value, uint _fromChain); 
 	event WithdrawErc20(address _receiver, uint _value); 
 
 	constructor() public {
@@ -51,7 +51,12 @@ contract Bridge {
 
 	/* bridge functions */
 	function () public payable {
-		emit Deposit(msg.sender, msg.value);
+		revert();
+		//emit Deposit(msg.sender, msg.value);
+	}
+
+	function deposit(uint _toChain) public payable {
+		emit Deposit(msg.sender, msg.value, _toChain);
 	}
 
 	function tokenFallback(address _sender, address _origin, uint _value, bytes _data) public returns (bool ok) {
@@ -65,8 +70,8 @@ contract Bridge {
 		// possibly risky. 
 	}
 
-	function withdraw(address _receiver, uint _value) public onlyBridge {
-		emit Withdraw(_receiver, _value);
+	function withdraw(address _receiver, uint _value, uint _fromChain) public onlyBridge {
+		emit Withdraw(_receiver, _value, _fromChain);
 		_receiver.transfer(_value);
 	}
 

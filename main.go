@@ -113,14 +113,15 @@ func getBlockNumber(url string, client *http.Client) (string, error) {
 	return startBlock, nil
 }
 
-func readDepositData(data string) (string, string) {
+func readDepositData(data string) (string, string, string) {
 	length := len(data)
-	if length == 130 { // '0x' + 64 + 64
+	if length == 194 { // '0x' + 64 + 64 + 64
 		recipient := "0x" + data[26:66]
 		value := data[66:130]
-		return recipient, value
+		toChain :=  "0x" + data[130:194]
+		return recipient, value, toChain
 	} else {
-		return "", ""
+		return "", "", ""
 	}
 }
 
@@ -131,7 +132,9 @@ func main() {
 	// default = false
 	// if verbosity = true, print out waiting for logs
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
-	configPtr := flag.String("config", "./config.json", "a string of the path to the config file")
+	configPtr := flag.String("config", "./config.json", "a string of the path to the config file") 
+
+	// @todo: read url and port from config file.
 	urlPtr := flag.String("url", "127.0.0.1", "a string of the url of the client")
 	portPtr := flag.String("port", "8545", "a string of the port of the client")
 
@@ -141,6 +144,12 @@ func main() {
 
 	verbose := *verbosePtr
 	if verbose { fmt.Println("verbose: ", verbose) }
+
+	chains := flag.Args()
+	if len(chains) == 0 {
+		chains = append(chains,"33")
+	}
+	fmt.Println("chains to connect to: ", chains)
 
 	clientAddr := *urlPtr
 	port := *portPtr
@@ -175,25 +184,20 @@ func main() {
 		fmt.Println("Failed to read file:", err)	
 	}
 
-	homeStr, err := parseJsonForEntry(string(file), "home")
-	if err != nil {
-		log.Fatal(err)
-	}
-	homeAddr, err := parseJsonForEntry(homeStr, "contractAddr")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("home contract address: ", homeAddr)
+	for i := 0; i < len(chains); i++ {
+		chainStr, err := parseJsonForEntry(string(file), chains[i])
+		if err != nil {
+			fmt.Println("could not find chain in config file")
+			log.Fatal(err)
+		}
 
-	foreignStr, err := parseJsonForEntry(string(file), "foreign")
-	if err != nil {
-		log.Fatal(err)
+		contractAddr, err := parseJsonForEntry(chainStr, "contractAddr")
+		if err != nil {
+			fmt.Println("could not find contractAddr in config file")
+			log.Fatal(err)
+		}
+		fmt.Println("contract address of chain", chains[i], ":", contractAddr)
 	}
-	foreignAddr, err := parseJsonForEntry(foreignStr, "contractAddr")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("foreign contract address: ", foreignAddr, "\n")
 
 	// checking for abi methods
 	// bridgeMethods := bridgeabi.Methods
@@ -248,11 +252,11 @@ func main() {
 
 			// if there are new logs, parse for event info
 			if len(logsResult) != 2 {
-				fmt.Println("new logs found!")
 				txHash, _ := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
 				//fmt.Println(txHash + "\n")
 				if logsFound[txHash] != true { 
 					logsFound[txHash] = true
+					fmt.Println("new logs found!")
 
 					// get logs contract address
 					address, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "address")
@@ -264,10 +268,10 @@ func main() {
 					// one contract, we would specify the address in our call to eth_getLogs
 					fmt.Println("contract addr: ", address)
 					//fmt.Println("length of address: ", len(address))
-					if strings.Compare(address[1:41], homeAddr) == 0 {
-					fmt.Println("home bridge contract event heard")
-					} else if strings.Compare(address[1:41], foreignAddr) == 0 {
-						fmt.Println("foreign bridge contract event heard")
+					for i := 0; i < len(chains); i++ {
+						if strings.Compare(address[1:41], chains[i]) == 0 {
+							fmt.Println("bridge contract event heard on chain ", chains[i])
+						}
 					}
 
 					// read topics of log
@@ -286,9 +290,10 @@ func main() {
 						}
 						//fmt.Println("length of data: ", len(data))
 						//fmt.Println("data: ", data)
-						receiver, value := readDepositData(data)
+						receiver, value, toChain := readDepositData(data)
 						fmt.Println("receiver: ", receiver) 
 						fmt.Println("value: ", value) // in hexidecimal
+						fmt.Println("to chain: ", toChain) // in hexidecimal
 				 	} else if strings.Compare(topics[2:68],creationId) == 0 {
 						fmt.Println("*** bridge contract creation\n")
 					}
@@ -298,6 +303,7 @@ func main() {
 		}
 	}()
 
+	// bridge timeout. eventually, change so it never times out
 	time.Sleep(6000 * time.Second)
 	ticker.Stop()
 }
