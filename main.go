@@ -132,7 +132,12 @@ func main() {
 	depositEvent := bridgeEvents["Deposit"]
 	depositHash := depositEvent.Id()
 	depositId := depositHash.Hex()
-	fmt.Println(depositId) // this is the depsoit event to watch for
+	fmt.Println(depositId) // this is the deposit event to watch for
+
+	creationEvent := bridgeEvents["ContractCreation"]
+	creationHash := creationEvent.Id()
+	creationId := creationHash.Hex()
+	fmt.Println(creationId) // don't really need to watch for this at the moment
 
 	// poll filter every 500ms for changes
 	ticker := time.NewTicker(500 * time.Millisecond)
@@ -163,11 +168,19 @@ func main() {
 			// if there are new logs, parse for event info
 			if len(logsResult) != 2 {
 				fmt.Println("new logs found")
-				txHash := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
-				fmt.Println(txHash + "\n")
-				// get tx events from txHash?
-				// logs appear to be hashed in some way. figure out how to recover events
-				// from logs /or/ find a way to read them directly. 
+				//txHash := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
+				//fmt.Println(txHash + "\n")
+
+				// read topics of log
+				topics := parseJsonForEntry(logsResult[1:len(logsResult)-1], "topics")
+				fmt.Println("topics: ", topics[2:68])
+				//fmt.Println("length of topics: ", len(topics)-4) len = 66: 0x + 64 hex chars = 32 bytes
+
+				if strings.Compare(topics[2:68],depositId) == 0 { 
+					fmt.Println("*** deposit event emitted ", topics[2:68], "\n")
+			 	} else if strings.Compare(topics[2:68],creationId) == 0 {
+					fmt.Println("*** bridge contract creation\n")
+				}
 			}
 
 		}
