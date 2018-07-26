@@ -43,7 +43,7 @@ type LogParams struct {
 func getLogs(url string, jsonParams string, client *http.Client) (*http.Response, error) {
 	jsonStr := `{"jsonrpc":"2.0","method":"eth_getLogs","params":[` + jsonParams + `],"id":74}`
 	jsonBytes := []byte(jsonStr)
-	fmt.Println(string(jsonBytes))
+	//fmt.Println(string(jsonBytes))
 
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
 	req.Header.Set("Content-Type", "application/json")
@@ -56,7 +56,7 @@ func getLogs(url string, jsonParams string, client *http.Client) (*http.Response
 func getTxReceipt(txHash string, url string, client *http.Client) (*http.Response, error) {
     jsonStr := `{"jsonrpc":"2.0","method":"eth_getTransactionReceipt","params":["` + txHash + `"],"id":74}`
     jsonBytes := []byte(jsonStr)
-    fmt.Println(string(jsonBytes))
+    //fmt.Println(string(jsonBytes))
 
     req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
     req.Header.Set("Content-Type", "application/json")
@@ -120,6 +120,20 @@ func main() {
 	    fmt.Println("Invalid abi:", err)
 	}
 
+	// config file reading
+	path, _ = filepath.Abs("./config.json")
+	file, err = ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Println("Failed to read file:", err)	
+	}
+	homeStr := parseJsonForEntry(string(file), "home")
+	homeAddr := parseJsonForEntry(homeStr, "contractAddr")
+	fmt.Println("home contract address: ", homeAddr)
+
+	foreignStr := parseJsonForEntry(string(file), "foreign")
+	foreignAddr := parseJsonForEntry(foreignStr, "contractAddr")
+	fmt.Println("foreign contract address: ", foreignAddr, "\n")
+
 	// checking for abi methods
 	// bridgeMethods := bridgeabi.Methods
 	// transferMethod := bridgeMethods["transfer"]
@@ -132,12 +146,12 @@ func main() {
 	depositEvent := bridgeEvents["Deposit"]
 	depositHash := depositEvent.Id()
 	depositId := depositHash.Hex()
-	fmt.Println(depositId) // this is the deposit event to watch for
+	fmt.Println("deposit event id: ", depositId) // this is the deposit event to watch for
 
 	creationEvent := bridgeEvents["ContractCreation"]
 	creationHash := creationEvent.Id()
 	creationId := creationHash.Hex()
-	fmt.Println(creationId) // don't really need to watch for this at the moment
+	fmt.Println("contract creation event id: ", creationId)
 
 	// poll filter every 500ms for changes
 	ticker := time.NewTicker(500 * time.Millisecond)
@@ -154,10 +168,10 @@ func main() {
 			resp, _ := getLogs(url, string(jsonParams), client)
 			defer resp.Body.Close()
 
-			fmt.Println("response Status:", resp.Status)
-			fmt.Println("response Headers:", resp.Header)
+			//fmt.Println("response Status:", resp.Status)
+			//fmt.Println("response Headers:", resp.Header)
 			body, _ := ioutil.ReadAll(resp.Body)
-			fmt.Println("response Body:", string(body))
+			//fmt.Println("response Body:", string(body))
  
 			// parse for getLogs result
 			//logsResult := parseJsonForResult(string(body))
@@ -171,13 +185,24 @@ func main() {
 				//txHash := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
 				//fmt.Println(txHash + "\n")
 
+				// get logs contract address
+				address := parseJsonForEntry(logsResult[1:len(logsResult)-1], "address")
+				// this is not actually a good way to listen for events from a  contract
+				// this could be used to confirm a log, but for listening to events from
+				// one contract, we would specify the address in our call to eth_getLogs
+				if strings.Compare(address[1:43], homeAddr) == 0 {
+					fmt.Println("home bridge contract event heard")
+				} else if strings.Compare(address[1:43], foreignAddr) == 0 {
+					fmt.Println("foreign bridge contract event heard")
+				}
+
 				// read topics of log
 				topics := parseJsonForEntry(logsResult[1:len(logsResult)-1], "topics")
 				fmt.Println("topics: ", topics[2:68])
 				//fmt.Println("length of topics: ", len(topics)-4) len = 66: 0x + 64 hex chars = 32 bytes
 
 				if strings.Compare(topics[2:68],depositId) == 0 { 
-					fmt.Println("*** deposit event emitted ", topics[2:68], "\n")
+					fmt.Println("*** deposit event ", topics[2:68], "\n")
 			 	} else if strings.Compare(topics[2:68],creationId) == 0 {
 					fmt.Println("*** bridge contract creation\n")
 				}

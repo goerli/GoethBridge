@@ -1,4 +1,4 @@
-/*
+*
 * configuration file for the bridge
 * initially, the bridge is two-sided: home and foreign.
 * eventually, we want the bridge to have multiple sides,
@@ -7,8 +7,10 @@
 * insted of home and foreign, we will have chain 1, chain 2, 
 * chain 3, ... etc.
 */
+
+
 {
-	"hone": {
+	"home": {
 		"url": "http://127.0.0.1:8545",
 		"contractAddr": "0x0",
 		"safeAddr": "0x0",
@@ -25,3 +27,5 @@
 		"gasPrice": "10000000"
 	}
 }
+
+
