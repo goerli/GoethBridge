@@ -15,7 +15,7 @@ pragma solidity ^0.4.23;
 */
 
 contract Bridge {
-	address owner;
+	address public owner;
 	// this is the public key address of the bridge's own keypair, not
 	// the address of the BridgeSafe or any contract.
 	address public bridge;
@@ -62,8 +62,7 @@ contract Bridge {
 	function setBridge(address _addr) public onlyOwner {
 		bridge = _addr;
 		//owner = 0x0; // remove owner after bridge is set?
-		// possibly risky 
-
+		// possibly risky. 
 	}
 
 	function withdraw(address _receiver, uint _value) public onlyBridge {

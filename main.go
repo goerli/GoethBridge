@@ -10,6 +10,11 @@ import (
 	"jsonparser"
 	"encoding/json"
 	//"encoding/hex"
+	"path/filepath"
+	"strings"
+
+	//"github.com/ethereum/go-ethereum"
+    "github.com/ethereum/go-ethereum/accounts/abi"
 )
 
 // used for json format a response from an RPC call
@@ -103,6 +108,32 @@ func main() {
     client := &http.Client{}
 	var params LogParams
 
+	path, _ := filepath.Abs("./truffle/build/contracts/Bridge.json")
+	file, err := ioutil.ReadFile(path)
+	if err != nil {
+	    fmt.Println("Failed to read file:", err)
+	}
+
+	fileAbi := parseJsonForEntry(string(file), "abi")
+	bridgeabi, err := abi.JSON(strings.NewReader(fileAbi))
+	if err != nil {
+	    fmt.Println("Invalid abi:", err)
+	}
+
+	// checking for abi methods
+	// bridgeMethods := bridgeabi.Methods
+	// transferMethod := bridgeMethods["transfer"]
+	// transferSig := transferMethod.Sig()
+	// s := string(transferSig[:])
+	// fmt.Println(s)
+
+	// checking abi for events
+	bridgeEvents := bridgeabi.Events
+	depositEvent := bridgeEvents["Deposit"]
+	depositHash := depositEvent.Id()
+	depositId := depositHash.Hex()
+	fmt.Println(depositId) // this is the depsoit event to watch for
+
 	// poll filter every 500ms for changes
 	ticker := time.NewTicker(500 * time.Millisecond)
 	go func() {
@@ -112,7 +143,7 @@ func main() {
 			params.FromBlock, _ = getBlockNumber(url, client)
 			fmt.Println("getting logs from block number: " + params.FromBlock + "\n")
 			jsonParams, _ := json.Marshal(params)
-            		//fmt.Println("jsonParams: " + string(jsonParams))
+            //fmt.Println("jsonParams: " + string(jsonParams))
 
 			//get logs from params.FromBlock
 			resp, _ := getLogs(url, string(jsonParams), client)
@@ -122,7 +153,7 @@ func main() {
 			fmt.Println("response Headers:", resp.Header)
 			body, _ := ioutil.ReadAll(resp.Body)
 			fmt.Println("response Body:", string(body))
-
+ 
 			// parse for getLogs result
 			//logsResult := parseJsonForResult(string(body))
 			logsResult := parseJsonForEntry(string(body), "result")
@@ -134,6 +165,9 @@ func main() {
 				fmt.Println("new logs found")
 				txHash := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
 				fmt.Println(txHash + "\n")
+				// get tx events from txHash?
+				// logs appear to be hashed in some way. figure out how to recover events
+				// from logs /or/ find a way to read them directly. 
 			}
 
 		}
