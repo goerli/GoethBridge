@@ -11,3 +11,6 @@ this is a go implementation of a generic bridge between blockchains. the bridge 
 
 ### requirements
 go 1.9.1
+
+go-ethereum
+`go get github.com/ethereum/go-ethereum`
