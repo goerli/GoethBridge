@@ -131,11 +131,10 @@ func main() {
 	// default = false
 	// if verbosity = true, print out waiting for logs
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
-	// flag.Parse()
-
-	// -config
-	// default = "./config.json"
 	configPtr := flag.String("config", "./config.json", "a string of the path to the config file")
+	urlPtr := flag.String("url", "127.0.0.1", "a string of the url of the client")
+	portPtr := flag.String("port", "8545", "a string of the port of the client")
+
 	flag.Parse()
 	configStr := *configPtr
 	fmt.Println("config: ", configStr)
@@ -143,8 +142,14 @@ func main() {
 	verbose := *verbosePtr
 	fmt.Println("verbose: ", verbose)
 
+	clientAddr := *urlPtr
+	port := *portPtr
+	//fmt.Println("url: ", clientAddr, ":", port)
+
 	// hard coded to client running at address:port
-	url := "http://127.0.0.1:8545"
+	//url := "http://127.0.0.1:8545
+	url := "http://"+clientAddr + ":" + port
+	fmt.Println("listening at: " + url)
     client := &http.Client{}
 	var params LogParams
 
@@ -166,7 +171,7 @@ func main() {
 	}
 
 	// config file reading
-	path, _ = filepath.Abs("./config.json")
+	path, _ = filepath.Abs(configStr)
 	file, err = ioutil.ReadFile(path)
 	if err != nil {
 		fmt.Println("Failed to read file:", err)	
