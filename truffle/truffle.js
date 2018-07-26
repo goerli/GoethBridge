@@ -19,6 +19,12 @@ module.exports = {
 		port: 8545,
 		network_id: "*",
 		gasLimit: 4700000
+	},
+	testnet2: {
+		host: "localhost",
+		port: 8546,
+		network_id: "*",
+		gasLimit: 4700000
 	}
     }
 };

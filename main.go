@@ -164,95 +164,114 @@ func readAbi() {
 	fmt.Println("contract creation event id: ", CreationId)
 }
 
-func listen(url string, client *http.Client) {
+var exit = make(chan bool)
+
+func listen(urls []string) {
+
 	var params LogParams
 	logsFound := make(map[string]bool)
 
+	//logs := make(chan string)
+
 	// poll filter every 500ms for changes
 	ticker := time.NewTicker(100 * time.Millisecond)
-	go func() {
-		for t := range ticker.C {
-			if verbose { fmt.Println(t) }
+	for i := 0; i < len(urls); i++ {
+		go func(url string) {
+			client := &http.Client{}
+			fmt.Println("listening at: " + url)
+			for t := range ticker.C{
+				if verbose { fmt.Println(t) }
 
-			params.FromBlock, _ = getBlockNumber(url, client)
-			if verbose { fmt.Println("getting logs from block number: " + params.FromBlock + "\n") }
-			jsonParams, _ := json.Marshal(params)
-            //fmt.Println("jsonParams: " + string(jsonParams))
+				params.FromBlock, _ = getBlockNumber(url, client)
+				if verbose { fmt.Println("getting logs from block number: " + params.FromBlock + "\n") }
+				jsonParams, _ := json.Marshal(params)
+	            //fmt.Println("jsonParams: " + string(jsonParams))
 
-			//get logs from params.FromBlock
-			resp, _ := getLogs(url, string(jsonParams), client)
-			defer resp.Body.Close()
+				//get logs from params.FromBlock
+				resp, _ := getLogs(url, string(jsonParams), client)
+				defer resp.Body.Close()
 
-			//fmt.Println("response Status:", resp.Status)
-			//fmt.Println("response Headers:", resp.Header)
-			body, _ := ioutil.ReadAll(resp.Body)
-			//fmt.Println("response Body:", string(body))
- 
-			// parse for getLogs result
-			//logsResult := parseJsonForResult(string(body))
-			logsResult, err := parseJsonForEntry(string(body), "result")
-			if err != nil {
-				fmt.Println(err)
-			}
-			if verbose { fmt.Println("logsResult: " + logsResult + "\n") }
-			//fmt.Println(len(logsResult))
+				//fmt.Println("response Status:", resp.Status)
+				//fmt.Println("response Headers:", resp.Header)
+				body, _ := ioutil.ReadAll(resp.Body)
+				//fmt.Println("response Body:", string(body))
+	 
+				// parse for getLogs result
+				//logsResult := parseJsonForResult(string(body))
+				logsResult, err := parseJsonForEntry(string(body), "result")
+				if err != nil {
+					fmt.Println(err)
+				}
+				if verbose { fmt.Println("logsResult: " + logsResult + "\n") }
+				//fmt.Println(len(logsResult))
 
-			// if there are new logs, parse for event info
-			if len(logsResult) != 2 {
-				txHash, _ := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
-				//fmt.Println(txHash + "\n")
-				if logsFound[txHash] != true { 
-					logsFound[txHash] = true
-					fmt.Println("new logs found!")
+				// if there are new logs, parse for event info
+				if len(logsResult) != 2 {
+					txHash, _ := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
+					//fmt.Println(txHash + "\n")
+					if logsFound[txHash] != true { 
+						logsFound[txHash] = true
+						fmt.Println("\nnew logs found!")
 
-					// get logs contract address
-					address, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "address")
-					if err != nil {
-						fmt.Println(err)
-					}
-					// this is not actually a good way to listen for events from a  contract
-					// this could be used to confirm a log, but for listening to events from
-					// one contract, we would specify the address in our call to eth_getLogs
-					fmt.Println("contract addr: ", address)
-					//fmt.Println("length of address: ", len(address))
-					for i := 0; i < len(chains); i++ {
-						if strings.Compare(address[1:41], chains[i]) == 0 {
-							fmt.Println("bridge contract event heard on chain ", chains[i])
-						}
-					}
+						//logs <- logsResult
+						//readLogs(logs)
+						//go readLogs(logs)
+						//<-exit
 
-					// read topics of log
-					topics,err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "topics")
-					if err != nil {
-						fmt.Println(err)
-					}
-					fmt.Println("topics: ", topics[2:68])
-					//fmt.Println("length of topics: ", len(topics)-4) len = 66: 0x + 64 hex chars = 32 bytes
-
-					if strings.Compare(topics[2:68],DepositId) == 0 { 
-						fmt.Println("*** deposit event ", topics[2:68])
-						data, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "data")
+						// get logs contract address
+						address, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "address")
 						if err != nil {
-							fmt.Println(nil)
+							fmt.Println(err)
 						}
-						//fmt.Println("length of data: ", len(data))
-						//fmt.Println("data: ", data)
-						receiver, value, toChain := readDepositData(data)
-						fmt.Println("receiver: ", receiver) 
-						fmt.Println("value: ", value) // in hexidecimal
-						fmt.Println("to chain: ", toChain) // in hexidecimal
-				 	} else if strings.Compare(topics[2:68],CreationId) == 0 {
-						fmt.Println("*** bridge contract creation\n")
+						// this is not actually a good way to listen for events from a  contract
+						// this could be used to confirm a log, but for listening to events from
+						// one contract, we would specify the address in our call to eth_getLogs
+						fmt.Println("contract addr: ", address)
+						//fmt.Println("length of address: ", len(address))
+						for i := 0; i < len(chains); i++ {
+							if strings.Compare(address[1:41], chains[i]) == 0 {
+								fmt.Println("bridge contract event heard on chain ", chains[i])
+							}
+						}
+
+						// read topics of log
+						topics,err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "topics")
+						if err != nil {
+							fmt.Println(err)
+						}
+						fmt.Println("topics: ", topics[2:68])
+						//fmt.Println("length of topics: ", len(topics)-4) len = 66: 0x + 64 hex chars = 32 bytes
+
+						if strings.Compare(topics[2:68],DepositId) == 0 { 
+							fmt.Println("*** deposit event ", topics[2:68])
+							data, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "data")
+							if err != nil {
+								fmt.Println(nil)
+							}
+							//fmt.Println("length of data: ", len(data))
+							//fmt.Println("data: ", data)
+							receiver, value, toChain := readDepositData(data)
+							fmt.Println("receiver: ", receiver) 
+							fmt.Println("value: ", value) // in hexidecimal
+							fmt.Println("to chain: ", toChain) // in hexidecimal
+					 	} else if strings.Compare(topics[2:68],CreationId) == 0 {
+							fmt.Println("*** bridge contract creation")
+						}
 					}
 				}
 			}
-
-		}
-	}()
+		}(urls[i])
+	}
 
 	// bridge timeout. eventually, change so it never times out
 	time.Sleep(6000 * time.Second)
 	ticker.Stop()
+}
+
+func readLogs(logs chan string) {
+	log := <-logs
+	fmt.Println(log)
+	exit<-true
 }
 
 func main() {
@@ -268,8 +287,8 @@ func main() {
 	configPtr := flag.String("config", "./config.json", "a string of the path to the config file") 
 
 	// @todo: read url and port from config file.
-	urlPtr := flag.String("url", "127.0.0.1", "a string of the url of the client")
-	portPtr := flag.String("port", "8545", "a string of the port of the client")
+	// urlPtr := flag.String("url", "127.0.0.1", "a string of the url of the client")
+	// portPtr := flag.String("port", "8545", "a string of the port of the client")
 
 	flag.Parse()
 	configStr := *configPtr
@@ -284,13 +303,13 @@ func main() {
 	}
 	fmt.Println("chains to connect to: ", chains)
 
-	clientAddr := *urlPtr
-	port := *portPtr
-	//fmt.Println("url: ", clientAddr, ":", port)
+	// clientAddr := *urlPtr
+	// port := *portPtr
+	// //fmt.Println("url: ", clientAddr, ":", port)
 
-	url := "http://" + clientAddr + ":" + port
-	fmt.Println("listening at: " + url)
-    client := &http.Client{}
+	// url := "http://" + clientAddr + ":" + port
+	// fmt.Println("listening at: " + url)
+ //    client := &http.Client{}
 
 	// config file reading
 	path, _ := filepath.Abs(configStr)
@@ -299,6 +318,7 @@ func main() {
 		fmt.Println("Failed to read file:", err)	
 	}
 
+	var chainUrls []string
 	// read config file for each chain id
 	for i := 0; i < len(chains); i++ {
 		chainStr, err := parseJsonForEntry(string(file), chains[i])
@@ -313,6 +333,14 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println("contract address of chain", chains[i], ":", contractAddr)
+
+		url, err := parseJsonForEntry(chainStr, "url")
+		if err != nil {
+			fmt.Println("could not find url in config file")
+			log.Fatal(err)
+		}
+		fmt.Println("url of chain", chains[i], ":", url)
+		chainUrls = append(chainUrls, url)
 	}
 
 	// checking for abi methods
@@ -322,7 +350,6 @@ func main() {
 	// s := string(transferSig[:])
 	// fmt.Println(s)
 
-	fmt.Println("listening for events...")
-
-	listen(url, client)
+	fmt.Println("\nlistening for events...")
+	listen(chainUrls)
 }
