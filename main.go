@@ -37,6 +37,7 @@ type Call struct {
 // used for getLogs json formatting
 type LogParams struct {
 	FromBlock string `json:"fromBlock"`
+	Address string `json:"address,omitempty"`
 }
 
 // this function makes the rpc call "eth_getLogs" passing in jsonParams as the json formatted
@@ -128,7 +129,10 @@ func readDepositData(data string) (string, string, string) {
 /* global vars */
 // flags
 var verbose bool
-var chains []string 
+var readAll bool
+var chains []string
+var contracts []string
+var chainUrls []string
 // events to listen for
 var DepositId string
 var CreationId string
@@ -165,21 +169,22 @@ func readAbi() {
 }
 
 func listen(urls []string, chains []string) {
-
 	var params LogParams
-	logsFound := make(map[string]bool)
 
-	//logs := make(chan string)
+	logsFound := make(map[string]bool)
 
 	// poll filter every 500ms for changes
 	ticker := time.NewTicker(100 * time.Millisecond)
-	for i := 0; i < len(urls); i++ {
-		go func(url string, chain string) {
+	for i, url := range urls {
+		go func(chain string) {
 			client := &http.Client{}
 			fmt.Println("listening at: " + url)
 			for t := range ticker.C{
 				if verbose { fmt.Println(t) }
 
+				if !readAll { 
+					params.Address = contracts[i]
+				} 
 				params.FromBlock, _ = getBlockNumber(url, client)
 				if verbose { fmt.Println("getting logs from block number: " + params.FromBlock + "\n") }
 				jsonParams, _ := json.Marshal(params)
@@ -198,13 +203,14 @@ func listen(urls []string, chains []string) {
 				//logsResult := parseJsonForResult(string(body))
 				logsResult, err := parseJsonForEntry(string(body), "result")
 				if err != nil {
+					fmt.Println("could not parse logs")
 					fmt.Println(err)
 				}
 				if verbose { fmt.Println("logsResult: " + logsResult + "\n") }
 				//fmt.Println(len(logsResult))
 
 				// if there are new logs, parse for event info
-				if len(logsResult) != 2 {
+				if len(logsResult) > 2 {
 					txHash, _ := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
 					//fmt.Println(txHash + "\n")
 					if logsFound[txHash] != true { 
@@ -233,7 +239,7 @@ func listen(urls []string, chains []string) {
 						}
 
 						// read topics of log
-						topics,err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "topics")
+						topics, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "topics")
 						if err != nil {
 							fmt.Println(err)
 						}
@@ -258,7 +264,7 @@ func listen(urls []string, chains []string) {
 					}
 				}
 			}
-		}(urls[i], chains[i])
+		}(chains[i])
 	}
 
 	// bridge timeout. eventually, change so it never times out
@@ -271,37 +277,29 @@ func main() {
 	readAbi()
 
 	/* flags */
-
 	// -v
 	// default = false
 	// if verbosity = true, print out waiting for logs
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
+	// would never actually want this, it's just kinda cool
+	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
 	configPtr := flag.String("config", "./config.json", "a string of the path to the config file") 
-
-	// @todo: read url and port from config file.
-	// urlPtr := flag.String("url", "127.0.0.1", "a string of the url of the client")
-	// portPtr := flag.String("port", "8545", "a string of the port of the client")
 
 	flag.Parse()
 	configStr := *configPtr
 	fmt.Println("config path: ", configStr)
 
-	verbose := *verbosePtr
+	verbose = *verbosePtr
 	if verbose { fmt.Println("verbose: ", verbose) }
 
-	chains := flag.Args()
+	readAll = *readAllPtr
+	if readAll { fmt.Println("read from all contracts? ", readAll)}
+
+	chains = flag.Args()
 	if len(chains) == 0 {
 		chains = append(chains,"33")
 	}
 	fmt.Println("chains to connect to: ", chains)
-
-	// clientAddr := *urlPtr
-	// port := *portPtr
-	// //fmt.Println("url: ", clientAddr, ":", port)
-
-	// url := "http://" + clientAddr + ":" + port
-	// fmt.Println("listening at: " + url)
- //    client := &http.Client{}
 
 	// config file reading
 	path, _ := filepath.Abs(configStr)
@@ -310,10 +308,9 @@ func main() {
 		fmt.Println("Failed to read file:", err)	
 	}
 
-	var chainUrls []string
 	// read config file for each chain id
-	for i := 0; i < len(chains); i++ {
-		chainStr, err := parseJsonForEntry(string(file), chains[i])
+	for i, chain := range chains {
+		chainStr, err := parseJsonForEntry(string(file), chain)
 		if err != nil {
 			fmt.Println("could not find chain in config file")
 			log.Fatal(err)
@@ -325,22 +322,16 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println("contract address of chain", chains[i], ":", contractAddr)
+		contracts = append(contracts, contractAddr)
 
 		url, err := parseJsonForEntry(chainStr, "url")
 		if err != nil {
 			fmt.Println("could not find url in config file")
 			log.Fatal(err)
 		}
-		fmt.Println("url of chain", chains[i], ":", url)
+		fmt.Println("url of chain", chain, ":", url)
 		chainUrls = append(chainUrls, url)
 	}
-
-	// checking for abi methods
-	// bridgeMethods := bridgeabi.Methods
-	// transferMethod := bridgeMethods["transfer"]
-	// transferSig := transferMethod.Sig()
-	// s := string(transferSig[:])
-	// fmt.Println(s)
 
 	fmt.Println("\nlistening for events...")
 	listen(chainUrls, chains)

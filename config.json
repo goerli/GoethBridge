@@ -11,27 +11,35 @@
 
 {
 	"1": {
-		"url": "http://127.0.0.1:8546",
-		"contractAddr": "0x0",
+		"url": "https://mainnet.infura.io/mew",
+		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
 		"safeAddr": "0x0",
-		"depositEvent": "Deposit()",
-		"withdrawEvent": "Withdraw()",
+		"depositEvent": "Deposit",
+		"withdrawEvent": "Withdraw",
+		"gasPrice": "10000000"
+	},
+	"3": {
+		"url": "https://ropsten.infura.io/mew",
+		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+		"safeAddr": "0x0",
+		"depositEvent": "Deposit",
+		"withdrawEvent": "Withdraw",
 		"gasPrice": "10000000"
 	},
 	"33": {
 		"url": "http://127.0.0.1:8545",
-		"contractAddr": "0x0",
+		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
 		"safeAddr": "0x0",
-		"depositEvent": "Deposit()",
-		"withdrawEvent": "Withdraw()",
+		"depositEvent": "Deposit",
+		"withdrawEvent": "Withdraw",
 		"gasPrice": "10000000"
 	},
-	"34": {
-		"url": "http://127.0.0.1:7545",
-		"contractAddr": "0x0",
+	"42": {
+		"url": "https://kovan.infura.io/mew",
+		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
 		"safeAddr": "0x0",
-		"depositEvent": "Deposit()",
-		"withdrawEvent": "Withdraw()",
+		"depositEvent": "Deposit",
+		"withdrawEvent": "Withdraw",
 		"gasPrice": "10000000"
 	}
 }
