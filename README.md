@@ -1,6 +1,6 @@
 # Multi Directional Bridge
 
-this is a go implementation of a generic bridge between blockchains. the bridge will be able to connect any two networks using native fuel or any token.
+this is a go implementation of a generic bridge between blockchains. the bridge will be able to connect any networks using native fuel or any token.
 
 ### todo
 * implement log filtering
