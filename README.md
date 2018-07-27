@@ -16,19 +16,23 @@ go-ethereum
 `go get github.com/ethereum/go-ethereum`
 
 # to run
-`gr main.go 1 3 42`
+`go run main.go 1 3 42`
   
   the arguments after `gr main.go` are the IDs of the networks you want to listen on
   
   the IDs and chain info are in the config.json file
   
   additional flags:
- `gr main.go -a 1 3 42`
+ `go run main.go -a 1 3 42`
  
- `gr main.go --config ./config.json 1 3 42`
+ `go run main.go --config ./config.json 1 3 42`
+ 
+ `go run main.go --password pswd 1 33`
  
  `-a` read logs from every contract on the network (not really useful, mostly for testing)
  
  `-v` verbose output
+ 
+ `--password` password string to account 0
  
  `--config` specify path to config file
