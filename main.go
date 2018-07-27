@@ -15,7 +15,7 @@ import (
 	"strings"
 	"log"
 	"flag"
-	//"strconv"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
@@ -399,12 +399,20 @@ func txClient(url string, chain string, gasPrice *big.Int){
 	fmt.Println("client started for chain", chain)
 	accounts := ks.Accounts()
 
-	nonce := getNonce(accounts[0].Address[:], url)
-	fmt.Println(nonce[2:])
-	nonceBytes, err := hex.DecodeString(nonce[2:])
+	nonce := getNonce(accounts[0].Address[:], url)[2:]
+	if(len(nonce) % 2 == 1) {
+		nonce = "0" + nonce
+	}
+	fmt.Println(nonce)
+	nonceBytes, err := hex.DecodeString(nonce[:])
+	if err != nil {
+		fmt.Println(err)
+	}
 	fmt.Println(nonceBytes)
-    //nonceUint := binary.BigEndian.Uint64(nonceBytes[0:])
-	nonceUint := uint64(7)
+	nonceBig := new(big.Int)
+	nonceBig.SetBytes(nonceBytes)
+    nonceUint := nonceBig.Uint64()
+	//nonceUint := uint64(14)
 
 	client := &http.Client{}
 	data, err := hex.DecodeString("b6b55f250000000000000000000000000000000000000000000000000000000000000021")
@@ -414,7 +422,7 @@ func txClient(url string, chain string, gasPrice *big.Int){
 	txSignedJson, err := json.Marshal(txSigned)
 	fmt.Println(string(txSignedJson))
 	//txNonce, err := parseJsonForEntry(string(txSignedJson), "nonce")
-	to, err := parseJsonForEntry(string(txSignedJson), "to")
+	//to, err := parseJsonForEntry(string(txSignedJson), "to")
 	value, err := parseJsonForEntry(string(txSignedJson), "value")
 	gas, err := parseJsonForEntry(string(txSignedJson), "gas")
 
@@ -425,14 +433,14 @@ func txClient(url string, chain string, gasPrice *big.Int){
 
 	tx := new(Tx)
 	tx.From = "0x" + hex.EncodeToString(accounts[0].Address[:])
-	tx.To = to
-	//tx.To = "0x5fea67eb73c9e3edac55f22c8833bcc683b70d5d"
+	//tx.To = to
+	tx.To = "0x5fea67eb73c9e3edac55f22c8833bcc683b70d5d"
 	tx.GasPrice = "0x" + hex.EncodeToString(gasPrice.Bytes())
 	tx.Gas = gas
 	tx.Value = value
-	//tx.Nonce = "0x" + strconv.FormatInt(int64(nonceUint), 16)
+	tx.Nonce = "0x" + strconv.FormatInt(int64(nonceUint), 16)
 	//tx.Nonce = "0x131"
-	//tx.Data = "0xb6b55f250000000000000000000000000000000000000000000000000000000000000021" // call Deposit(uint _toChain)
+	tx.Data = "0xb6b55f250000000000000000000000000000000000000000000000000000000000000021" // call Deposit(uint _toChain)
 	// tx.V = v
 	// tx.R = r
 	// tx.S = s
