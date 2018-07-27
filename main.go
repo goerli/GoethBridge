@@ -478,6 +478,7 @@ func main() {
 	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
 	configPtr := flag.String("config", "./config.json", "a string of the path to the config file") 
 	keysPtr := flag.String("keystore", "./keystore", "a string of the path to the keystore directory") 
+	passwordPtr := flag.String("password", "password", "a string of the password to the first keystore account") 
 
 	flag.Parse()
 	configStr := *configPtr
@@ -497,6 +498,8 @@ func main() {
 
 	keystorePath := *keysPtr
 	fmt.Println("keystore path: ", keystorePath)
+
+	password := *passwordPtr
 
 	// config file reading
 	path, _ := filepath.Abs(configStr)
@@ -545,7 +548,7 @@ func main() {
 	for i, account := range accounts {
 		fmt.Println("account", i, ":", account.Address.Hex())
 	}
-	err = ks.Unlock(accounts[0], "password")
+	err = ks.Unlock(accounts[0], password)
 	if err != nil {
 		fmt.Println("could not unlock account 0")
 		fmt.Println(err)
