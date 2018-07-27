@@ -1,0 +1,47 @@
+*
+* configuration file for the bridge
+* generally, bridges are two-sided: home and foreign.
+* however, we want this bridge to have multiple sides,
+* so that a user can specify which chain they want to transfer
+* their fuel or tokens to.
+* instead of home and foreign, we will have chain 1, chain 2, 
+* chain 3, ... etc.
+*/
+
+
+{
+	"1": {
+		"url": "https://mainnet.infura.io/mew",
+		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+		"safeAddr": "0x0",
+		"depositEvent": "Deposit",
+		"withdrawEvent": "Withdraw",
+		"gasPrice": "10000000"
+	},
+	"3": {
+		"url": "https://ropsten.infura.io/mew",
+		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+		"safeAddr": "0x0",
+		"depositEvent": "Deposit",
+		"withdrawEvent": "Withdraw",
+		"gasPrice": "10000000"
+	},
+	"33": {
+		"url": "http://127.0.0.1:8545",
+		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+		"safeAddr": "0x0",
+		"depositEvent": "Deposit",
+		"withdrawEvent": "Withdraw",
+		"gasPrice": "10000000"
+	},
+	"42": {
+		"url": "https://kovan.infura.io/mew",
+		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+		"safeAddr": "0x0",
+		"depositEvent": "Deposit",
+		"withdrawEvent": "Withdraw",
+		"gasPrice": "10000000"
+	}
+}
+
+
