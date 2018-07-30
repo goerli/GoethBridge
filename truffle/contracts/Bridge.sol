@@ -21,7 +21,7 @@ contract Bridge {
 	address public bridge;
 
 	event ContractCreation(address _owner);
-
+	event BridgeSet(address _addr);
 	// currently, we only specify the receiving address on the other chain
 	// and the value of the deposit.
 	// @todo: add `address _toChain` so that the user can specify which
@@ -66,13 +66,14 @@ contract Bridge {
 
 	function setBridge(address _addr) public onlyOwner {
 		bridge = _addr;
+		emit BridgeSet(bridge);
 		//owner = 0x0; // remove owner after bridge is set?
 		// possibly risky. 
 	}
 
-	function withdraw(address _receiver, uint _value, uint _fromChain) public onlyBridge {
+	function withdraw(address _receiver, uint _value, uint _fromChain) public {//onlyBridge {
 		emit Withdraw(_receiver, _value, _fromChain);
-		_receiver.transfer(_value);
+		//_receiver.transfer(_value);
 	}
 
 	function withdrawErc20(address _receiver, uint _value) public onlyBridge {

@@ -12,6 +12,12 @@ contract('Bridge', function(accounts) {
 		assert(owner == addrA)
 	})
 
+	it("should set the bridge address", async() => {
+		let setBridge = await bridge.setBridge(addrA, {from: addrA})
+		let bridgeAddr = await bridge.bridge.call()
+		assert(bridgeAddr == addrA)
+	})
+
 	it("should make a ether deposit", async() => {
 		let _val = 17
 		let chainId = 33
