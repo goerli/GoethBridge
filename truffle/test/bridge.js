@@ -22,7 +22,7 @@ contract('Bridge', function(accounts) {
 		let _val = 17
 		let chainId = 33
 		//deposit = await bridge.sendTransaction({from: addrA, value: _val})
-		deposit = await bridge.deposit(chainId, {from: addrA, value: _val})
+		deposit = await bridge.deposit(addrA, chainId, {from: addrA, value: _val})
 	})
 	
 	// it("should call transfer", async() => {
