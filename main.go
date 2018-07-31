@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	//"time"
 	"jsonparser"
-	"encoding/json"
+	//"encoding/json"
 	"encoding/hex"
 	//"encoding/binary"
 	"path/filepath"
@@ -25,13 +25,13 @@ import (
     "github.com/ethereum/go-ethereum/rlp"
 
     //"github.com/noot/multi_directional_bridge/rlp"
-    "github.com/noot/multi_directional_bridge/transaction"
+    //"github.com/noot/multi_directional_bridge/transaction"
     "github.com/noot/multi_directional_bridge/client"
 )
 
-const (
-	GAS_LIMIT = 4600000
-)
+/* global vars */
+var flags map[string]bool
+var ks *keystore.KeyStore
 
 /****** keystore methods ******/
 func newKeyStore(path string) (*keystore.KeyStore) {
@@ -40,7 +40,7 @@ func newKeyStore(path string) (*keystore.KeyStore) {
 }
 
 /***** rpc methods ******/
-
+// used initially when making http requests; can delete these later
 // used for json format a response from an RPC call
 type Resp struct {
 	jsonrpc string
@@ -165,26 +165,6 @@ func sendRawTx(txData string, url string, client *http.Client) (*http.Response, 
     return resp, nil
 }
 
-// this function parses jsonStr for the result entry and returns its value as a string
-func parseJsonForResult(jsonStr string) (string, error) {
-	jsonBody := []byte(string(jsonStr))
-	res, _, _, err := jsonparser.Get(jsonBody, "result")
-	if err != nil {
-		return "", err
-	}
-	return string(res), nil
-}
-
-// this function parses jsonStr for the entry "get" and returns its value as a string
-func parseJsonForEntry(jsonStr string, get string) (string, error) {
-	jsonBody := []byte(string(jsonStr))
-	res, _, _, err := jsonparser.Get(jsonBody, get)
-	if err != nil {
-		return "", err
-	}
-	return string(res), nil
-}
-
 // this function gets the current block number by calling "eth_blockNumber"
 func getBlockNumber(url string, client *http.Client) (string, error) {
 	var jsonBytes = []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}`)
@@ -210,7 +190,6 @@ func getBlockNumber(url string, client *http.Client) (string, error) {
 	return startBlock, nil
 }
 
-/*****  helpers *****/
 func getNonce(address []byte, url string) (string) {
 	// get nonce
 	client := &http.Client{}
@@ -233,18 +212,36 @@ func getNonce(address []byte, url string) (string) {
 	return nonce
 }
 
-/* global vars */
-// flags
-var flags map[string]bool
-var verbose bool
-var readAll bool
-//var clients []*client.Chain
+/*****  helpers *****/
+// this function parses jsonStr for the result entry and returns its value as a string
+func parseJsonForResult(jsonStr string) (string, error) {
+	jsonBody := []byte(string(jsonStr))
+	res, _, _, err := jsonparser.Get(jsonBody, "result")
+	if err != nil {
+		return "", err
+	}
+	return string(res), nil
+}
 
-// keystore
-var ks *keystore.KeyStore
+// this function parses jsonStr for the entry "get" and returns its value as a string
+func parseJsonForEntry(jsonStr string, get string) (string, error) {
+	jsonBody := []byte(string(jsonStr))
+	res, _, _, err := jsonparser.Get(jsonBody, get)
+	if err != nil {
+		return "", err
+	}
+	return string(res), nil
+}
 
-// channels 
-var setBridgeDone chan bool
+func rlpDecodeTx(rawTxData string) (*types.Transaction) {
+	tx := new(types.Transaction)
+    rawtx,err := hex.DecodeString(rawTxData)
+    if err != nil {
+    	fmt.Println(err)
+    }
+    rlp.DecodeBytes(rawtx, &tx)
+	return tx
+}
 
 func readAbi() (*client.Events) {
 	e := new(client.Events)
@@ -290,250 +287,12 @@ func readAbi() (*client.Events) {
 	return e
 }
 
-func setBridge(url string, chain string, contractAddr string, gasPrice *big.Int) (string) {
-	client := &http.Client{}
-	accounts := ks.Accounts()
-
-	//data := make([]byte, 32)
-	//tx := types.NewTransaction(uint64(100), accounts[1].Address, big.NewInt(int64(0)), uint64(4600000), gasPrices[0], data)
-	tx := new(transaction.Tx)
-	tx.From = "0x" + hex.EncodeToString(accounts[0].Address[:])
-	tx.To = contractAddr
-	tx.GasPrice = "0x" + hex.EncodeToString(gasPrice.Bytes())
-	//tx.Nonce = "0x131"
-	//tx.Data = "0xb6b55f250000000000000000000000000000000000000000000000000000000000000021" // call Deposit(uint _toChain)
-	tx.Data = "0x8dd148020000000000000000000000008f9b540b19520f8259115a90e4b4ffaeac642a30" //call setBridge(address _addr)
-	//txSigned, err := ks.SignTx(accounts[0], tx, big.NewInt(int64(33))) // chainId
-	txJson, err := json.Marshal(tx)
-	//fmt.Println(string(txJson))
-
-	txJsonStr := string(txJson)
-	resp, err := sendTx(txJsonStr, url, client)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	//fmt.Println(hex.EncodeToString(body))
-	txHash, err := parseJsonForEntry(string(body), "result")
-	if err != nil {
-		fmt.Println("could not parse logs")
-		fmt.Println(err)
-	}
-	return txHash
-}
-
-func setBridgeRaw(url string, chain string, contractAddr string, gasPrice *big.Int, nonce uint64) (string, error) {
-	client := &http.Client{}
-	accounts := ks.Accounts()
-
-	contract := new(common.Address)
-	contractBytes, err := hex.DecodeString(contractAddr[2:])
-	if err != nil {
-		return "", err
-	}
-	contract.SetBytes(contractBytes)
-
-	// data, err := hex.DecodeString("8dd148020000000000000000000000008f9b540b19520f8259115a90e4b4ffaeac642a30")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// } 
-	data := new([]byte)
-	// NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte)
-	tx := types.NewTransaction(nonce, *contract, big.NewInt(int64(0)), uint64(4600000), gasPrice, *data)
-	txSigned, err := ks.SignTx(accounts[0], tx, big.NewInt(int64(33))) // chainId
-	txData, err := rlp.EncodeToBytes(txSigned)
-
-	txRlpData := hex.EncodeToString(txData)
-	var txRes *types.Transaction
-    rawtx,err := hex.DecodeString(txRlpData)
-    rlp.DecodeBytes(rawtx, &txRes)
-    //fmt.Println(txRes)
-
-	//fmt.Println("length of rlp encoded data: ", len("0x" + txRlpData))
-	resp, err := sendRawTx("0x" + txRlpData, url, client)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	//fmt.Println(hex.EncodeToString(body))
-	txHash, err := parseJsonForEntry(string(body), "result")
-	if err != nil {
-		return "", err
-	}
-	//fmt.Println("txHash: " + txHash + "\n")
-
-	return txHash, nil
-}
-
-func withdraw(url string, chain string, contractAddr string, data string, gasPrice *big.Int) (string) {
-	client := &http.Client{}
-	accounts := ks.Accounts()
-
-	//data := make([]byte, 32)
-	//tx := types.NewTransaction(uint64(100), accounts[1].Address, big.NewInt(int64(0)), uint64(4600000), gasPrices[0], data)
-	tx := new(transaction.Tx)
-	tx.From = "0x" + hex.EncodeToString(accounts[0].Address[:])
-	//tx.To = "0x" + hex.EncodeToString(accounts[1].Address[:])
-	tx.To = contractAddr
-	tx.GasPrice = "0x" + hex.EncodeToString(gasPrice.Bytes())
-	//tx.Value = "0x333"
-	//tx.Nonce = "0x131"
-	tx.Data = data //call setBridge(address _addr)
-	//txSigned, err := ks.SignTx(accounts[0], tx, big.NewInt(int64(33))) // chainId
-	txJson, err := json.Marshal(tx)
-	//fmt.Println(string(txJson))
-
-	//fmt.Println(txBytes)big
-	txJsonStr := string(txJson)
-	resp, err := sendTx(txJsonStr, url, client)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	//fmt.Println(hex.EncodeToString(body))
-	txHash, err := parseJsonForEntry(string(body), "result")
-	if err != nil {
-		fmt.Println("could not parse logs")
-		fmt.Println(err)
-	}
-	fmt.Println("txHash: " + txHash + "\n")
-
-	return txHash
-}
-
-func rlpDecodeTx(rawTxData string) (*types.Transaction) {
-	tx := new(types.Transaction)
-    rawtx,err := hex.DecodeString(rawTxData)
-    if err != nil {
-    	fmt.Println(err)
-    }
-    rlp.DecodeBytes(rawtx, &tx)
-	return tx
-}
-
-func txClient(url string, chain string, contractAddr string, gasPrice *big.Int){
-	fmt.Println("client started for chain", chain)
-	accounts := ks.Accounts()
-
-	nonce := getNonce(accounts[0].Address[:], url)[2:]
-	if(len(nonce) % 2 == 1) {
-		nonce = "0" + nonce
-	}
-	//fmt.Println(nonce)
-	nonceBytes, err := hex.DecodeString(nonce[:])
-	if err != nil {
-		fmt.Println(err)
-	}
-	nonceBig := new(big.Int)
-	nonceBig.SetBytes(nonceBytes)
-    nonceUint := nonceBig.Uint64()
-    fmt.Println("nonce: ", nonceUint)
-
-	txHash := setBridge(url, chain, contractAddr, gasPrice)
-	fmt.Println("set bridge tx hash: ", txHash)
-
-	<-setBridgeDone
-
-	client := &http.Client{}
-	txReceipt, err := getTxReceipt(txHash, url, client)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(txReceipt)
-
-	rawTxData, err := getRawTx(txHash, url, client)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(rawTxData)
-	fmt.Println("length of received raw data: ", len(rawTxData))
-
-	// decode
-	tx := rlpDecodeTx(rawTxData[2:])
-	fmt.Println("decoded data: ", tx)
-	//fmt.Println(tx.To().Hex())
-
-	txHash, err = setBridgeRaw(url, chain, contractAddr, gasPrice, nonceUint)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("set bridge raw tx hash: ", txHash)
-
-	// data := "0xb5c5f6720000000000000000000000008f9b540b19520f8259115a90e4b4ffaeac642a30000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000021"
-	// txHash = withdraw(url, chain, contractAddr, data, gasPrice)
-	// fmt.Println("withdraw tx hash: ", txHash)
-
-	//client := &http.Client{}
-	//data, err := hex.DecodeString("b6b55f250000000000000000000000000000000000000000000000000000000000000021")
-	//data, err := hex.DecodeString("8dd148020000000000000000000000005fea67eb73c9e3edac55f22c8833bcc683b70d5d") //call setBridge(address _addr)
-	//txGeth := types.NewTransaction(nonceUint, accounts[1].Address, big.NewInt(int64(33)), GAS_LIMIT, gasPrice, data)
-	//txSigned, err := ks.SignTx(accounts[0], txGeth, big.NewInt(int64(33))) // chainId
-
-	//txSignedJson, err := json.Marshal(txSigned)
-	//fmt.Println(string(txSignedJson))
-	//txNonce, err := parseJsonForEntry(string(txSignedJson), "nonce")
-	//to, err := parseJsonForEntry(string(txSignedJson), "to")
-	//value, err := parseJsonForEntry(string(txSignedJson), "value")
-	//gas, err := parseJsonForEntry(string(txSignedJson), "gas")
-
-	//txGasPrice, err := parseJsonForEntry(string(txSignedJson), "gasPrice") // should be ok
-	// v, err := parseJsonForEntry(string(txSignedJson), "v")
-	// r, err := parseJsonForEntry(string(txSignedJson), "r")
-	// s, err := parseJsonForEntry(string(txSignedJson), "s")
-
-	// tx := new(Tx)
-	// tx.From = "0x" + hex.EncodeToString(accounts[0].Address[:])
-	// //tx.To = to
-	// tx.To = contractAddr
-	// tx.GasPrice = "0x" + hex.EncodeToString(gasPrice.Bytes())
-	// tx.Gas = gas
-	// //tx.Value = value
-	// //tx.Nonce = "0x" + strconv.FormatInt(int64(nonceUint), 16)
-	// //tx.Nonce = "0x131"
-	// // withdraw data
-	// //tx.Data = "0xb5c5f6720000000000000000000000008f9b540b19520f8259115a90e4b4ffaeac642a30000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000021"
-	// tx.Data = "0x8dd148020000000000000000000000008f9b540b19520f8259115a90e4b4ffaeac642a30" // call setBridge(address)
-	// //tx.Data = "0xb6b55f250000000000000000000000000000000000000000000000000000000000000021" // call Deposit(uint _toChain)
-	// // tx.V = v
-	// // tx.R = r
-	// // tx.S = s
-	// txJson, err := json.Marshal(tx)
-	// //fmt.Println(string(txJson))
-
-	// //fmt.Println(txBytes)big
-	// txJsonStr := string(txJson)
-	// resp, err := sendTx(txJsonStr, url, client)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// defer resp.Body.Close()
-
-	// body, _ := ioutil.ReadAll(resp.Body)
-	// //fmt.Println(hex.EncodeToString(body))
-	// logsResult, err := parseJsonForEntry(string(body), "result")
-	// if err != nil {
-	// 	fmt.Println("could not parse logs")
-	// 	fmt.Println(err)
-	// }
-	// //fmt.Println("logsResult: " + logsResult + "\n")
-}
-
 func main() {
 	/* read abi of contract in truffle folder */
 	events := readAbi()
 
 	/* flags */
-	// -v
-	// default = false
-	// if verbosity = true, print out waiting for logs
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
-	// would never actually want this, it's just kinda cool
 	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
 	configPtr := flag.String("config", "./config.json", "a string of the path to the config file") 
 	keysPtr := flag.String("keystore", "./keystore", "a string of the path to the keystore directory") 
@@ -543,10 +302,10 @@ func main() {
 	configStr := *configPtr
 	fmt.Println("config path: ", configStr)
 
-	verbose = *verbosePtr
+	verbose := *verbosePtr
 	if verbose { fmt.Println("verbose: ", verbose) }
 
-	readAll = *readAllPtr
+	readAll := *readAllPtr
 	if readAll { fmt.Println("read from all contracts? ", readAll)}
 
 	chains := flag.Args()
@@ -657,7 +416,6 @@ func main() {
 	// }
 
 	/* channels */
-	setBridgeDone = make(chan bool)
 	doneClient := make(chan bool)
 
 	/* listener */
@@ -668,7 +426,4 @@ func main() {
 	}
 
 	<-doneClient
-	/* client */
-	//fmt.Println("\nclient started...")
-	//client(chainUrls, chains, keyStore)
 }

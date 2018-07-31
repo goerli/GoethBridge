@@ -18,9 +18,10 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 )
 
-// events to listen for
-var events *Events
-var keys *keystore.KeyStore
+/* global variables */
+var events *Events // events to listen for
+var keys *keystore.KeyStore // keystore; used to sign txs
+var flags map[string]bool // command line flags
 
 type Chain struct {
 	Url string
@@ -135,11 +136,12 @@ func SetBridge(chain *Chain) () {
 }
 
 // starts a goroutine to listen on every chain 
-func Listen(chain *Chain, e *Events, doneClient chan bool, ks *keystore.KeyStore, flags map[string]bool) {
+func Listen(chain *Chain, e *Events, doneClient chan bool, ks *keystore.KeyStore, fl map[string]bool) {
 	//logsFound := make(map[common.Hash]bool)
 	//fmt.Println(chain)
 	events = e
 	keys = ks
+	flags = fl
 	fmt.Println("listening at: " + chain.Url)
 
 	client, err := ethclient.Dial(chain.Url)
