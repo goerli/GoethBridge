@@ -71,9 +71,9 @@ contract Bridge {
 		// possibly risky. 
 	}
 
-	function withdraw(address _recipient, uint _value, uint _fromChain) public {//onlyBridge {
+	function withdraw(address _recipient, uint _value, uint _fromChain) public onlyBridge {
 		emit Withdraw(_recipient, _value, _fromChain);
-		//_recipient.transfer(_value);
+		_recipient.transfer(_value);
 	}
 
 	function withdrawErc20(address _recipient, uint _value) public onlyBridge {

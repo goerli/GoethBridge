@@ -323,6 +323,13 @@ func main() {
 	flags["v"] = verbose
 	flags["a"] = readAll
 
+	/* keys */
+	ks = newKeyStore(keystorePath)
+	ksaccounts := ks.Accounts()
+	for i, account := range ksaccounts {
+		fmt.Println("account", i, ":", account.Address.Hex())
+	}
+
 	// config file reading
 	path, _ := filepath.Abs(configStr)
 	file, err := ioutil.ReadFile(path)
@@ -335,7 +342,8 @@ func main() {
 	for i, chain := range chains {
 		clients[i] = new(client.Chain)
 
-		clients[i].Id = chain
+		clients[i].Id = new(big.Int)
+		clients[i].Id.SetString(chain, 10)
 
 		chainStr, err := parseJsonForEntry(string(file), chain)
 		if err != nil {
@@ -387,33 +395,25 @@ func main() {
 		}
 		from.SetBytes(fromBytes)
 		clients[i].From = from
-	}
 
-	/* keys */
-	ks = newKeyStore(keystorePath)
-	ksaccounts := ks.Accounts()
-	for i, account := range ksaccounts {
-		fmt.Println("account", i, ":", account.Address.Hex())
-	}
-	//fromAddress := common.HexToAddress(fromAccounts[0])
+		clients[i].Password = password
 
-	err = ks.Unlock(ksaccounts[0], password)
-	if err != nil {
-		fmt.Println("could not unlock account 0")
-		fmt.Println(err)
+		if !ks.HasAddress(*from) {
+			log.Fatal("from account not in keystore")
+		}
+		/* unlock account */
+		// if(ks.HasAddress(*from)) {
+		// 	account := new(accounts.Account)
+		// 	account.Address = *from
+		// 	err = ks.Unlock(*account, password)
+		// 	if err != nil {
+		// 		fmt.Println("could not unlock account")
+		// 		fmt.Println(err)
+		// 	} else {
+		// 		log.Fatal("account not found in keystore")
+		// 	}
+		// }
 	}
-
-	// if(ks.HasAddress(fromAddress)) {
-	// 	account := new(accounts.Account)
-	// 	account.Address = fromAddress
-	// 	err = ks.Unlock(*account, password)
-	// 	if err != nil {
-	// 		fmt.Println("could not unlock account 0")
-	// 		fmt.Println(err)
-	// 	}
-	// } else {
-	// 	log.Fatal("account not found in keystore")
-	// }
 
 	/* channels */
 	doneClient := make(chan bool)
@@ -422,7 +422,7 @@ func main() {
 	fmt.Println("\nlistening for events...")
 	for _, chain := range clients {
 		//fmt.Println(chain)
-		go client.Listen(chain, events, doneClient, ks, flags)
+		go client.Listen(chain, clients, events, doneClient, ks, flags)
 	}
 
 	<-doneClient

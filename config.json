@@ -17,16 +17,25 @@
 		"depositEvent": "Deposit",
 		"withdrawEvent": "Withdraw",
 		"gasPrice": "10000000",
-		"from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30"
+		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},
 	"3": {
 		"url": "https://ropsten.infura.io",
-		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+		"contractAddr": "0xa3594f510ceceb5221d405a7929ceec7c0662969",
 		"safeAddr": "0x0",
 		"depositEvent": "Deposit",
 		"withdrawEvent": "Withdraw",
 		"gasPrice": "10000000",
-		"from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30"
+		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
+	},
+	"4": {
+		"url": "https://rinkeby.infura.io",
+		"contractAddr": "0x05c4d6c7252c08cd1ecc8c9fb1da3b988dc77bbf",
+		"safeAddr": "0x0",
+		"depositEvent": "Deposit",
+		"withdrawEvent": "Withdraw",
+		"gasPrice": "10000000",
+		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},
 	"33": {
 		"url": "http://127.0.0.1:8545",
@@ -35,7 +44,7 @@
 		"depositEvent": "Deposit",
 		"withdrawEvent": "Withdraw",
 		"gasPrice": "10000000",
-		"from": "0x8F9B540B19520f8259115a90E4b4FfaEaC642a30"
+		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},
 	"42": {
 		"url": "https://kovan.infura.io",
@@ -44,7 +53,7 @@
 		"depositEvent": "Deposit",
 		"withdrawEvent": "Withdraw",
 		"gasPrice": "10000000",
-		"from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30"
+		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	}
 }
 
