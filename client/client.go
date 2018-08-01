@@ -5,12 +5,12 @@ import (
 	"time"
 	"encoding/hex"
 	//"encoding/json"
-	"io/ioutil"
+	//"io/ioutil"
 	"math/big"
 	"context"
 	"log"
 	"strings"
-	"path/filepath"
+	//"path/filepath"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -24,9 +24,8 @@ import (
 var events *Events // events to listen for
 var keys *keystore.KeyStore // keystore; used to sign txs
 var flags map[string]bool // command line flags
-var allChains []*Chain
-var IdsToChain map[*big.Int]int // map big.Int Id to index in allChains array
-var logsRead map[string]bool
+//var allChains []*Chain //[]*Chain
+//var logsRead map[string]bool
 
 type Chain struct {
 	Url string
@@ -81,31 +80,39 @@ func setWithdrawalData(w *Withdrawal) (*Withdrawal) {
 		return w
 }
 
-func mapIdsToChain(allChains []*Chain) {
-	IdsToChain = make(map[*big.Int]int)
+// find the index in allChains of a chain with a particular Id
+// return index i if chain in allChains, otherwise return -1
+func findChainIndex(id *big.Int, allChains []*Chain) int {
 	for i, chain := range allChains {
-		IdsToChain[chain.Id] = i
+		if chain.Id.Cmp(id) == 0 { return i }
 	}
+	return -1
 }
+
+// func mapIdsToChain(allChains []*Chain) {
+// 	IdsToChainIndex = make(map[*big.Int]int)
+// 	for i, chain := range allChains {
+// 		IdsToChainIndex[chain.Id] = i
+// 	}
+// }
 
 /***** client functions ******/
 
-func Filter(chain *Chain, filter *ethereum.FilterQuery, logsDone chan bool) {
+func Filter(chain *Chain, allChains []*Chain, filter *ethereum.FilterQuery, logsDone chan bool, logsRead map[string]bool) {
 	logs, err := chain.Client.FilterLogs(context.Background(), *filter)
-	logsRead := make(map[string]bool)
 
 	if err != nil {
 		fmt.Println(err)
 	}
 	if len(logs) != 0 {
 		//fmt.Println(len(logs))
-		go ReadLogs(chain, logs, logsRead)
+		go ReadLogs(chain, allChains, logs, logsRead)
 	}
 
 	logsDone <- true
 }
 
-func ReadLogs(chain *Chain, logs []types.Log, logsRead map[string]bool) {
+func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsRead map[string]bool) {
 	//logs := <-ch
 	//fmt.Println(logs)
 	for _, log := range logs {
@@ -122,7 +129,7 @@ func ReadLogs(chain *Chain, logs []types.Log, logsRead map[string]bool) {
 					fmt.Println("*** deposit event")
 					fmt.Println("txHash: ", txHash)
 					withdrawDone := make(chan bool)
-					go ActOnDeposit(chain, log.TxHash, withdrawDone)
+					go HandleDeposit(chain, allChains, log.TxHash, withdrawDone)
 					<-withdrawDone
 			 	} else if strings.Compare(topic,events.CreationId) == 0 {
 					fmt.Println("*** bridge contract creation")
@@ -145,7 +152,7 @@ func ReadLogs(chain *Chain, logs []types.Log, logsRead map[string]bool) {
 	}
 }
 
-func ActOnDeposit(chain *Chain, txHash common.Hash, withdrawDone chan bool) {
+func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdrawDone chan bool) {
 	tx, isPending, err := chain.Client.TransactionByHash(context.Background(), txHash)
 	if isPending {
 		// wait
@@ -174,9 +181,21 @@ func ActOnDeposit(chain *Chain, txHash common.Hash, withdrawDone chan bool) {
 
 		fromChain := new(big.Int)
 		fromChain.SetString(toChain, 16)
+		fmt.Println("chain to withdraw to: ", fromChain)
 		//fmt.Println(fromChain)
-		chainIndex := IdsToChain[fromChain]
-		Withdraw(allChains[chainIndex], withdrawal)
+		//chainIndex := IdsToChainIndex[fromChain]
+		//fmt.Println("chain to withdraw to: ", allChains[fromChain])
+		// idx := findChainIndex(chain.Id, allChains)
+		// fmt.Println("deposit chain id: ", chain.Id, allChains[idx])
+
+		idx := findChainIndex(fromChain, allChains)
+		//fmt.Println("withdraw chain id: ", fromChain, allChains[idx])
+
+		if idx == -1 {
+			fmt.Println("could not find chain to withdraw to")
+		} else {
+			Withdraw(allChains[idx], withdrawal)
+		}
 	}
 	withdrawDone <- true
 }
@@ -219,7 +238,7 @@ func SetBridge(chain *Chain) () {
 	chain.Nonce = nonce
 }
 
-func Deposit(chain *Chain) {
+func Deposit(chain *Chain, id string) {
 	client := chain.Client
 	//accounts := keys.Accounts()
 	from := new(accounts.Account)
@@ -227,10 +246,10 @@ func Deposit(chain *Chain) {
 	fmt.Println()
 
 	//dataStr := "0x47e7ef24000000000000000000000000ca35b7d915458ef540ade6068dfe2f44e8fa733c0000000000000000000000000000000000000000000000000000000000000003"
-	chainIdBytes := chain.Id.Bytes()
-	chainIdHex := hex.EncodeToString(chainIdBytes)
+	//chainIdBytes := chain.Id.Bytes()
+	//chainIdHex := hex.EncodeToString(chainIdBytes)
 
-	chainId := padTo32Bytes(chainIdHex)	
+	chainId := padTo32Bytes(id)	
 	dataStr := "47e7ef24000000000000000000000000" + chain.From.Hex()[2:] + chainId // deposit function signature + recipient addr + chain
 	//fmt.Println(len(dataStr))
 	data, err := hex.DecodeString(dataStr)
@@ -238,7 +257,7 @@ func Deposit(chain *Chain) {
 		fmt.Println(err)
 	} 
 
-	value := big.NewInt(7777)
+	value := big.NewInt(77777777)
 	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(4600000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
@@ -307,9 +326,14 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 	events = e
 	keys = ks
 	flags = fl
-	allChains = ac
-	mapIdsToChain(allChains)
+	allChains := ac
 
+	//idx := findChainIndex(chain.Id, allChains)
+	//fmt.Println("chain id: ", chain.Id, allChains[idx])
+
+	logsRead := make(map[string]bool)
+
+	if flags["v"] { fmt.Println(logsRead) }
 	fmt.Println("listening at: " + chain.Url)
 
 	// dial client
@@ -324,9 +348,13 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 	chain.Nonce = nonce
 
 	//SetBridge(chain)
-	if chain.Id.Cmp(big.NewInt(4)) == 0 {
-		Deposit(chain)
-	}
+	// if chain.Id.Cmp(big.NewInt(4)) == 0 {
+	// 	Deposit(chain, "3")
+	// }
+	// if chain.Id.Cmp(big.NewInt(3)) == 0 {
+	// 	Deposit(chain, "4")
+	// }
+
 	fromBlock := big.NewInt(1)
 	filter := new(ethereum.FilterQuery)
 
@@ -338,6 +366,7 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 		block, err := client.BlockByNumber(context.Background(), nil)
 		if err != nil { log.Fatal(err) }
 		if flags["v"] { fmt.Println("latest block: ", block.Number()) }
+		fromBlock = block.Number()
 
 		filter.FromBlock = fromBlock
 		if !flags["a"] {
@@ -346,10 +375,9 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 			filter.Addresses = contractArr
 		}
 		logsDone := make(chan bool)
-		go Filter(chain, filter, logsDone)
+		go Filter(chain, allChains, filter, logsDone, logsRead)
 		<-logsDone
 
-		fromBlock = block.Number()
 
 		// d1 := block.Number().Bytes()
 	 //    err = ioutil.WriteFile("./lastblock", d1, 0644)

@@ -21,7 +21,7 @@
 	},
 	"3": {
 		"url": "https://ropsten.infura.io",
-		"contractAddr": "0xa3594f510ceceb5221d405a7929ceec7c0662969",
+		"contractAddr": "0x83c8a938be89382b21f2d242840881322bbeea9a",
 		"safeAddr": "0x0",
 		"depositEvent": "Deposit",
 		"withdrawEvent": "Withdraw",

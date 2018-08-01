@@ -327,7 +327,7 @@ func main() {
 	ks = newKeyStore(keystorePath)
 	ksaccounts := ks.Accounts()
 	for i, account := range ksaccounts {
-		fmt.Println("account", i, ":", account.Address.Hex())
+		if verbose { fmt.Println("account", i, ":", account.Address.Hex()) }
 	}
 
 	// config file reading
@@ -398,9 +398,6 @@ func main() {
 
 		clients[i].Password = password
 
-		if !ks.HasAddress(*from) {
-			log.Fatal("from account not in keystore")
-		}
 		/* unlock account */
 		// if(ks.HasAddress(*from)) {
 		// 	account := new(accounts.Account)
