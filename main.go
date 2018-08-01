@@ -15,8 +15,10 @@ import (
 	"strings"
 	"log"
 	"flag"
+	//"sync"
 	//"strconv"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/common"
 	//"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -303,6 +305,9 @@ func main() {
 	keysPtr := flag.String("keystore", "./keystore", "a string of the path to the keystore directory") 
 	passwordPtr := flag.String("password", "password", "a string of the password to the account specified in the config file") 
 
+	fundBridgePtr := flag.Bool("fund", false, "a bool; if true, prompt user to fund bridge contract")
+	depositPtr := flag.Bool("deposit", false, "a bool; if true, prompt user to deposit to bridge contract")
+
 	flag.Parse()
 	configStr := *configPtr
 	fmt.Println("config path: ", configStr)
@@ -324,9 +329,14 @@ func main() {
 
 	password := *passwordPtr
 
+	fundBridge := *fundBridgePtr
+	deposit := *depositPtr
+
 	flags = make(map[string]bool)
 	flags["v"] = verbose
 	flags["a"] = readAll
+	flags["fund"] = fundBridge
+	flags["deposit"] = deposit
 
 	/* keys */
 	ks = newKeyStore(keystorePath)
@@ -417,13 +427,29 @@ func main() {
 		// }
 	}
 
+	for _, chain := range clients {
+		/* dial client */
+		chainClient, err := ethclient.Dial(chain.Url)
+		if err != nil {
+			log.Fatal(err)
+		}
+		chain.Client = chainClient
+	}
+
 	/* channels */
 	doneClient := make(chan bool)
+	donePrompt := make(chan bool)
+
+	/* prompt, if flags set */
+	for _, chain := range clients {
+		/* prompt if flags set & listen */
+		go client.Prompt(chain, ks, flags, donePrompt)
+		<-donePrompt
+	}
 
 	/* listener */
 	fmt.Println("\nlistening for events...")
 	for _, chain := range clients {
-		//fmt.Println(chain)
 		go client.Listen(chain, clients, events, doneClient, ks, flags)
 	}
 
