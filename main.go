@@ -284,6 +284,11 @@ func readAbi() (*client.Events) {
 	bridgeSetHash := bridgeSetEvent.Id()
 	e.BridgeSetId = bridgeSetHash.Hex()
 	fmt.Println("set bridge event id: ", e.BridgeSetId)
+
+	bridgeFundedEvent := bridgeEvents["BridgeFunded"]
+	bridgeFundedHash := bridgeFundedEvent.Id()
+	e.BridgeFundedId = bridgeFundedHash.Hex()
+	fmt.Println("set bridge event id: ", e.BridgeFundedId)
 	return e
 }
 
@@ -296,7 +301,7 @@ func main() {
 	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
 	configPtr := flag.String("config", "./config.json", "a string of the path to the config file") 
 	keysPtr := flag.String("keystore", "./keystore", "a string of the path to the keystore directory") 
-	passwordPtr := flag.String("password", "password", "a string of the password to the first keystore account") 
+	passwordPtr := flag.String("password", "password", "a string of the password to the account specified in the config file") 
 
 	flag.Parse()
 	configStr := *configPtr

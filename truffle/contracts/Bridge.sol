@@ -22,6 +22,7 @@ contract Bridge {
 
 	event ContractCreation(address _owner);
 	event BridgeSet(address _addr);
+	event BridgeFunded(address _addr);
 	// currently, we only specify the receiving address on the other chain
 	// and the value of the deposit.
 	// @todo: add `address _toChain` so that the user can specify which
@@ -36,6 +37,7 @@ contract Bridge {
 
 	constructor() public {
 		owner = msg.sender;
+		bridge = msg.sender;
 		emit ContractCreation(msg.sender);
 	}
 
@@ -53,6 +55,11 @@ contract Bridge {
 	function () public payable {
 		revert();
 		//emit Deposit(msg.sender, msg.value);
+	}
+
+	function fundBridge() public payable {
+		// thanks
+		emit BridgeFunded(msg.sender);
 	}
 
 	function deposit(address _recipient, uint _toChain) public payable {

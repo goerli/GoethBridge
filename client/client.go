@@ -25,7 +25,7 @@ var events *Events // events to listen for
 var keys *keystore.KeyStore // keystore; used to sign txs
 var flags map[string]bool // command line flags
 //var allChains []*Chain //[]*Chain
-//var logsRead map[string]bool
+var logsRead = map[string]bool{}
 
 type Chain struct {
 	Url string
@@ -51,6 +51,7 @@ type Events struct {
   	CreationId string
  	WithdrawId string
 	BridgeSetId string
+	BridgeFundedId string
 }
 
 /****** helpers ********/
@@ -98,21 +99,21 @@ func findChainIndex(id *big.Int, allChains []*Chain) int {
 
 /***** client functions ******/
 
-func Filter(chain *Chain, allChains []*Chain, filter *ethereum.FilterQuery, logsDone chan bool, logsRead map[string]bool) {
+func Filter(chain *Chain, allChains []*Chain, filter *ethereum.FilterQuery, logsDone chan bool) {
 	logs, err := chain.Client.FilterLogs(context.Background(), *filter)
-
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	if len(logs) != 0 {
 		//fmt.Println(len(logs))
-		go ReadLogs(chain, allChains, logs, logsRead)
+		go ReadLogs(chain, allChains, logs, logsDone)
 	}
 
 	logsDone <- true
 }
 
-func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsRead map[string]bool) {
+func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan bool) {
 	//logs := <-ch
 	//fmt.Println(logs)
 	for _, log := range logs {
@@ -125,15 +126,15 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsRead map[s
 			txHash := log.TxHash.Hex()
 
 			if(!logsRead[txHash]) {
-				if strings.Compare(topic,events.DepositId) == 0 { 
+				if strings.Compare(topic, events.DepositId) == 0 { 
 					fmt.Println("*** deposit event")
 					fmt.Println("txHash: ", txHash)
 					withdrawDone := make(chan bool)
 					go HandleDeposit(chain, allChains, log.TxHash, withdrawDone)
 					<-withdrawDone
-			 	} else if strings.Compare(topic,events.CreationId) == 0 {
+			 	} else if strings.Compare(topic, events.CreationId) == 0 {
 					fmt.Println("*** bridge contract creation")
-				} else if strings.Compare(topic,events.WithdrawId) == 0 {
+				} else if strings.Compare(topic, events.WithdrawId) == 0 {
 					fmt.Println("*** withdraw event")
 					txHash := log.TxHash.Hex()
 					fmt.Println("txHash: ", txHash)
@@ -141,15 +142,19 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsRead map[s
 					// fmt.Println("receiver: ", receiver) 
 					// fmt.Println("value: ", value) // in hexidecimal
 					// fmt.Println("to chain: ", toChain) // in hexidecimal
-				} else if strings.Compare(topic,events.BridgeSetId) == 0 {
+				} else if strings.Compare(topic, events.BridgeSetId) == 0 {
 					fmt.Println("*** set bridge event")
 					fmt.Println("txHash: ", txHash)
-				}	
+				} else if strings.Compare(topic, events.BridgeFundedId) == 0 {
+					fmt.Println("*** funded bridge event")
+					fmt.Println("txHash: ", txHash)
+				}
 
 				logsRead[txHash] = true
 			}
 		}
 	}
+	logsDone <- true
 }
 
 func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdrawDone chan bool) {
@@ -214,8 +219,10 @@ func SetBridge(chain *Chain) () {
 	if err != nil {
 		fmt.Println(err)
 	} 
-	//data := new([]byte)
-	// NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte)
+
+	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
+	chain.Nonce = nonce + 1
+
 	tx := types.NewTransaction(chain.Nonce, *chain.Contract, big.NewInt(int64(0)), uint64(4600000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
@@ -233,12 +240,9 @@ func SetBridge(chain *Chain) () {
 		fmt.Println("could not send tx")
 		fmt.Println(err)
 	}
-
-	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
-	chain.Nonce = nonce
 }
 
-func Deposit(chain *Chain, id string) {
+func Deposit(chain *Chain, value *big.Int, id string) {
 	client := chain.Client
 	//accounts := keys.Accounts()
 	from := new(accounts.Account)
@@ -257,7 +261,9 @@ func Deposit(chain *Chain, id string) {
 		fmt.Println(err)
 	} 
 
-	value := big.NewInt(77777777)
+	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
+	chain.Nonce = nonce 
+
 	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(4600000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
@@ -276,11 +282,11 @@ func Deposit(chain *Chain, id string) {
 		fmt.Println(err)
 	}
 
-	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
-	chain.Nonce = nonce + 1
+	//nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
+	//chain.Nonce = nonce + 1
 }
 
-func Withdraw(chain *Chain, withdrawal *Withdrawal) () {
+func Withdraw(chain *Chain, withdrawal *Withdrawal) {
 	client := chain.Client
 	//accounts := keys.Accounts()
 	from := new(accounts.Account)
@@ -297,6 +303,9 @@ func Withdraw(chain *Chain, withdrawal *Withdrawal) () {
 		fmt.Println(err)
 	} 
 
+	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
+	chain.Nonce = nonce
+
 	tx := types.NewTransaction(chain.Nonce, *chain.Contract, big.NewInt(int64(0)), uint64(4600000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
@@ -311,12 +320,42 @@ func Withdraw(chain *Chain, withdrawal *Withdrawal) () {
 
 	err = client.SendTransaction(context.Background(), txSigned)
 	if err != nil {
-		fmt.Println("could not send tx")
+		//fmt.Println("could not send tx")
+		//fmt.Println(err)
+	}
+}
+
+func FundBridge(chain *Chain, value *big.Int) {
+	client := chain.Client
+	from := new(accounts.Account)
+	from.Address = *chain.From
+	fmt.Println()
+
+	data, err := hex.DecodeString("c9c0909f") //fund me function sig
+	if err != nil {
+		fmt.Println(err)
+	} 
+
+	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
+	chain.Nonce = nonce
+
+	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(4600000), chain.GasPrice, data)
+	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	txHash := txSigned.Hash()
+	fmt.Println("attempting to send tx", txHash.Hex(), "to fund bridge on chain", chain.Id, "with value", value.String())
+	if err != nil {
+		fmt.Println("could not sign tx")
 		fmt.Println(err)
 	}
 
-	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
-	chain.Nonce = nonce + 1
+	err = client.SendTransaction(context.Background(), txSigned)
+	if err != nil {
+		fmt.Println("could not send tx")
+		fmt.Println(err)
+	}
 }
 
 // main goroutine
@@ -328,12 +367,6 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 	flags = fl
 	allChains := ac
 
-	//idx := findChainIndex(chain.Id, allChains)
-	//fmt.Println("chain id: ", chain.Id, allChains[idx])
-
-	logsRead := make(map[string]bool)
-
-	if flags["v"] { fmt.Println(logsRead) }
 	fmt.Println("listening at: " + chain.Url)
 
 	// dial client
@@ -343,17 +376,19 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 	}
 	chain.Client = client
 
-	// get account nonce
-	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
-	chain.Nonce = nonce
+	//nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
+	//chain.Nonce = nonce 
 
 	//SetBridge(chain)
-	// if chain.Id.Cmp(big.NewInt(4)) == 0 {
-	// 	Deposit(chain, "3")
-	// }
+	value := big.NewInt(7777777700)
+	if chain.Id.Cmp(big.NewInt(4)) == 0 {
+		Deposit(chain, value, "3")
+	}
 	// if chain.Id.Cmp(big.NewInt(3)) == 0 {
 	// 	Deposit(chain, "4")
 	// }
+	//value := big.NewInt(1000000000000000)
+	//FundBridge(chain, value)
 
 	fromBlock := big.NewInt(1)
 	filter := new(ethereum.FilterQuery)
@@ -364,20 +399,21 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 		if flags["v"] { fmt.Println(t) }
 
 		block, err := client.BlockByNumber(context.Background(), nil)
-		if err != nil { log.Fatal(err) }
-		if flags["v"] { fmt.Println("latest block: ", block.Number()) }
-		fromBlock = block.Number()
+		if fromBlock != block.Number() {
+			if err != nil { log.Fatal(err) }
+			if flags["v"] { fmt.Println("latest block: ", block.Number()) }
+			fromBlock = block.Number()
 
-		filter.FromBlock = fromBlock
-		if !flags["a"] {
-			contractArr := make([]common.Address, 1)
-			contractArr = append(contractArr, *chain.Contract)
-			filter.Addresses = contractArr
+			filter.FromBlock = fromBlock
+			if !flags["a"] {
+				contractArr := make([]common.Address, 1)
+				contractArr = append(contractArr, *chain.Contract)
+				filter.Addresses = contractArr
+			}
+			logsDone := make(chan bool)
+			go Filter(chain, allChains, filter, logsDone)
+			<-logsDone
 		}
-		logsDone := make(chan bool)
-		go Filter(chain, allChains, filter, logsDone, logsRead)
-		<-logsDone
-
 
 		// d1 := block.Number().Bytes()
 	 //    err = ioutil.WriteFile("./lastblock", d1, 0644)
