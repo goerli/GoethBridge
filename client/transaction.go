@@ -81,30 +81,39 @@ func Deposit(chain *Chain, value *big.Int, id string) {
 	}
 }
 
-// ids are in hexidecimal
-func DepositMulti(chain *Chain, value *big.Int, ids []string, percents []*big.Int) {
+func PayBridge(chain *Chain, value *big.Int) {
 	client := chain.Client
-	//accounts := keys.Accounts()
 	from := new(accounts.Account)
 	from.Address = *chain.From
 	fmt.Println()
 
-	dataStr := "29a956bc000000000000000000000000" + chain.From.Hex()[2:] + 
-	"0000000000000000000000000000000000000000000000000000000000000006" + 
-	"000000000000000000000000000000000000000000000000000000000000000c"
-	dataStr = dataStr + padIntTo32Bytes(int64(len(ids)))
-	//fmt.Println(len(dataStr))
-	for _, id := range ids {
-		idPadded := padTo32Bytes(id)
-		dataStr = dataStr + idPadded
+	nonce, err := client.PendingNonceAt(context.Background(), *chain.From)
+	chain.Nonce = nonce
+
+	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(4600000), chain.GasPrice, []byte{})
+	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
+	if err != nil {
+		fmt.Println("could not sign tx")
+		fmt.Println(err)
 	}
 
-	dataStr = dataStr + padIntTo32Bytes(int64(len(percents)))
-	//fmt.Println(len(dataStr))
-	for _, percent:= range percents {
-		percentPadded := padBigTo32Bytes(percent)
-		dataStr = dataStr + percentPadded
+	txHash := txSigned.Hash()
+	fmt.Println("attempting to send tx", txHash.Hex(), "to deposit on chain", chain.Id)
+
+	err = client.SendTransaction(context.Background(), txSigned)
+	if err != nil {
+		fmt.Println("could not send tx")
+		fmt.Println(err)
 	}
+}
+// ids are in hexidecimal
+func WithdrawTo(chain *Chain, value *big.Int, id string) {
+	client := chain.Client
+	from := new(accounts.Account)
+	from.Address = *chain.From
+	fmt.Println()
+
+	dataStr := "5fcbc20e000000000000000000000000" + chain.From.Hex()[2:] + padTo32Bytes(id) + padBigTo32Bytes(value)
 
 	//fmt.Println("input data: ", dataStr)
 
@@ -116,7 +125,7 @@ func DepositMulti(chain *Chain, value *big.Int, ids []string, percents []*big.In
 	nonce, err := client.PendingNonceAt(context.Background(), *chain.From)
 	chain.Nonce = nonce
 
-	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(6700000), chain.GasPrice, data)
+	tx := types.NewTransaction(chain.Nonce, *chain.Contract, big.NewInt(0), uint64(4600000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
 		fmt.Println("could not sign tx")

@@ -25,6 +25,7 @@ contract Bridge {
 	event ContractCreation(address _owner);
 	event BridgeSet(address _addr);
 	event BridgeFunded(address _addr);
+	event Paid(address _addr, uint _value);
 
 	event Deposit(address _recipient, uint _value, uint _toChain); 
 	event DepositErc20(address _recipient, uint _value); 
@@ -52,6 +53,7 @@ contract Bridge {
 	function () public payable {
 		//revert();
 		balance[msg.sender] += msg.value;
+		emit Paid(msg.sender, msg.value);
 	}
 
 	function fundBridge() public payable {

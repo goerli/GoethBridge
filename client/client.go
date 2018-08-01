@@ -219,6 +219,7 @@ func FundPrompt(chain *Chain) {
 	var value int64
 	var confirm int64
 	fmt.Println("\nfunding the bridge contract on chain", chain.Id)
+	fmt.Println("note that funding of the bridge cannot be withdrawn")
 	fmt.Println("enter value of funding, in wei")
 	fmt.Scanln(&value)
 	if value == -1 { 
@@ -262,60 +263,54 @@ func DepositPrompt(chain *Chain) {
 	Deposit(chain, valBig, toHex)
 }
 
-func DepositMultiPrompt(chain *Chain) {
+func WithdrawToPrompt(chain *Chain) {
 	var value int64
 	var to int64
-	var percent string
-	var numChains int64
 	var confirm int64
-	fmt.Println("\ndeposit multi")
-	fmt.Println("depositing to the bridge contract on chain", chain.Id)
+	fmt.Println("\nwithdrawing to other chains from the bridge contract on chain", chain.Id)
 	fmt.Println("type -1 to escape")
-
-	fmt.Println("enter value of deposit, in wei")
+	fmt.Println("enter value of withdraw, in wei")
 	fmt.Scanln(&value)
 	if value == -1 { 
 		return
 	}
-	fmt.Println("enter the number of chains to withdraw on; you will be prompted for info for this many chains")
-	fmt.Scanln(&numChains)
-	if numChains == -1 { 
+	fmt.Println("enter chain id to withdraw on")
+	fmt.Scanln(&to)
+	if to == -1 { 
 		return
 	}
 
-	var percents []*big.Int
-	var ids []string
-
-	for i := 0; i < int(numChains); i++ {
-		fmt.Println(i, ": enter the id of the chain to withdraw on")
-		fmt.Scanln(&to)
-		if to == -1 { 
-			return
-		}	
-		toHex := fmt.Sprintf("%x", to)
-		ids = append(ids, toHex)	
-
-		fmt.Println(i, ": enter the percent of the value to be withdrawn on chain", to)
-		fmt.Println("eg. to withdraw 33 percent, enter 33")
-		fmt.Scanln(&percent)
-		if percent == "-1" {
-			return
-		}
-		percentBig, _ := new(big.Int).SetString(percent, 10)
-		percents = append(percents, percentBig)
-	}
-
-	valBig := big.NewInt(value)
-
-	fmt.Println("confirm deposit on chain", chain.Id, "with value", value, "wei, withdrawing to multiple chains")
-	fmt.Println("chains:", ids)
-	fmt.Println("percents:", percents)
-
+	fmt.Println("confirm deposit on chain", chain.Id, "with value", value, "wei, withdrawing to chain", to)
 	fmt.Scanln(&confirm)
 	if confirm == -1 { 
 		return
 	}
-	DepositMulti(chain, valBig, ids, percents)
+
+	valBig := big.NewInt(value)
+	toHex := fmt.Sprintf("%x", to)
+	WithdrawTo(chain, valBig, toHex)
+}
+
+func PayBridgePrompt(chain *Chain) {
+	var value int64
+	var confirm int64
+	fmt.Println("\npaying bridge contract on chain", chain.Id)
+	fmt.Println("note that bridge payments can later be withdrawn")
+	fmt.Println("type -1 to escape")
+	fmt.Println("enter value of payment, in wei")
+	fmt.Scanln(&value)
+	if value == -1 {
+		return
+	}
+
+	fmt.Println("confirm payment to bridge on chain", chain.Id, "with value", value, "wei")
+	fmt.Scanln(&confirm)
+	if confirm == -1 {
+		return
+	}
+
+	valBig := big.NewInt(value)
+	PayBridge(chain, valBig)
 }
 
 func Prompt(chain *Chain, ks *keystore.KeyStore, fl map[string]bool, donePrompt chan bool) {
@@ -332,7 +327,13 @@ func Prompt(chain *Chain, ks *keystore.KeyStore, fl map[string]bool, donePrompt 
 		DepositPrompt(chain)
 	}
 
-	DepositMultiPrompt(chain)
+	if flags["pay"] {
+		PayBridgePrompt(chain)
+	}
+
+	if flags["withdraw"] {
+		WithdrawToPrompt(chain)
+	}
 
 	//donePrompt.Done()
 	donePrompt <- true

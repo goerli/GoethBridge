@@ -100,7 +100,9 @@ func main() {
 	fundBridgePtr := flag.Bool("fund", false, "a bool; if true, prompt user to fund bridge contract")
 	depositPtr := flag.Bool("deposit", false, "a bool; if true, prompt user to deposit to bridge contract")
 	noListenPtr := flag.Bool("no-listen", false, "a bool; if true, do not start the listener. this would be used to only make deposits or other contract interactions")
-	
+	payPtr := flag.Bool("pay", false, "a bool; if true, prompt user to pay bridge contract")
+	withdrawPtr := flag.Bool("withdraw", false, "a bool; if true, prompt user to withdraw from bridge contract to another chain")
+
 	flag.Parse()
 	configStr := *configPtr
 	fmt.Println("config path: ", configStr)
@@ -125,6 +127,8 @@ func main() {
 	fundBridge := *fundBridgePtr
 	deposit := *depositPtr
 	noListen := *noListenPtr
+	pay := *payPtr
+	withdraw := *withdrawPtr
 
 	flags = make(map[string]bool)
 	flags["v"] = verbose
@@ -132,6 +136,8 @@ func main() {
 	flags["fund"] = fundBridge
 	flags["deposit"] = deposit
 	flags["nolisten"] = noListen
+	flags["pay"] = pay
+	flags["withdraw"] = withdraw
 
 	/* keys */
 	ks = newKeyStore(keystorePath)
