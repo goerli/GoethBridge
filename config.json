@@ -48,7 +48,7 @@
 	},
 	"42": {
 		"url": "https://kovan.infura.io",
-		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+		"contractAddr": "0x34afc2e543d091a245fb9d5daa799adbcdd2c4f5",
 		"safeAddr": "0x0",
 		"depositEvent": "Deposit",
 		"withdrawEvent": "Withdraw",

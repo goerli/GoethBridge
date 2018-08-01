@@ -296,23 +296,31 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 
 		block, err := client.BlockByNumber(context.Background(), nil)
 		if err != nil {
-			log.Fatal(err)
-		}
-		if fromBlock != block.Number() {
+			//log.Fatal(err)
+			//fmt.Println("could not get block with ethclient.. trying http request")
+			blockNum, err := getBlockNumber(chain.Url)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if flags["v"] { fmt.Println("latest block: ", blockNum) }
+			fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
+
+			//fmt.Println("fromBlock: ", fromBlock)
+		} else if fromBlock != block.Number() {
 			if err != nil { log.Fatal(err) }
 			if flags["v"] { fmt.Println("latest block: ", block.Number()) }
 			fromBlock = block.Number()
-
-			filter.FromBlock = fromBlock
-			if !flags["a"] {
-				contractArr := make([]common.Address, 1)
-				contractArr = append(contractArr, *chain.Contract)
-				filter.Addresses = contractArr
-			}
-			logsDone := make(chan bool)
-			go Filter(chain, allChains, filter, logsDone)
-			<-logsDone
 		}
+
+		filter.FromBlock = fromBlock
+		if !flags["a"] {
+			contractArr := make([]common.Address, 1)
+			contractArr = append(contractArr, *chain.Contract)
+			filter.Addresses = contractArr
+		}
+		logsDone := make(chan bool)
+		go Filter(chain, allChains, filter, logsDone)
+		<-logsDone
 	}
  
 	// bridge timeout. eventually, change so it never times out

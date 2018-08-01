@@ -41,6 +41,12 @@ module.exports = {
                 gas: 1000000,
                 gasLimit: 67000000
         },
+        kovan: {
+                provider: new HDWalletProvider(secrets.mnemonic, "https://kovan.infura.io/gpcq2PXJhM3TALrZmuhX"),
+                network_id: "*",
+                gas: 1000000,
+                gasLimit: 67000000
+        },
    	mainnet: {
       		provider: new HDWalletProvider(secrets.mnemonic, "https://mainnet.infura.io/gpcq2PXJhM3TALrZmuhX"),
       		network_id: 1,
