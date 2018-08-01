@@ -70,6 +70,17 @@ func padTo32Bytes(s string) (string) {
 	}
 }
 
+func padBigTo32Bytes(n *big.Int) (string) {
+	nBytes := n.Bytes()
+	nHexStr := hex.EncodeToString(nBytes)
+	return padTo32Bytes(nHexStr)
+}
+
+func padIntTo32Bytes(n int64) (string) {
+	nBig := new(big.Int).SetInt64(n)
+	return padBigTo32Bytes(nBig)
+}
+
 // set w.Data
 func setWithdrawalData(w *Withdrawal) (*Withdrawal) {
 		valueBytes := w.Value.Bytes()
@@ -251,6 +262,62 @@ func DepositPrompt(chain *Chain) {
 	Deposit(chain, valBig, toHex)
 }
 
+func DepositMultiPrompt(chain *Chain) {
+	var value int64
+	var to int64
+	var percent string
+	var numChains int64
+	var confirm int64
+	fmt.Println("\ndeposit multi")
+	fmt.Println("depositing to the bridge contract on chain", chain.Id)
+	fmt.Println("type -1 to escape")
+
+	fmt.Println("enter value of deposit, in wei")
+	fmt.Scanln(&value)
+	if value == -1 { 
+		return
+	}
+	fmt.Println("enter the number of chains to withdraw on; you will be prompted for info for this many chains")
+	fmt.Scanln(&numChains)
+	if numChains == -1 { 
+		return
+	}
+
+	var percents []*big.Int
+	var ids []string
+
+	for i := 0; i < int(numChains); i++ {
+		fmt.Println(i, ": enter the id of the chain to withdraw on")
+		fmt.Scanln(&to)
+		if to == -1 { 
+			return
+		}	
+		toHex := fmt.Sprintf("%x", to)
+		ids = append(ids, toHex)	
+
+		fmt.Println(i, ": enter the percent of the value to be withdrawn on chain", to)
+		fmt.Println("eg. to withdraw 33 percent, enter 33")
+		fmt.Scanln(&percent)
+		if percent == "-1" {
+			return
+		}
+		percentBig, _ := new(big.Int).SetString(percent, 10)
+		percents = append(percents, percentBig)
+	}
+
+	valBig := big.NewInt(value)
+
+	fmt.Println("confirm deposit on chain", chain.Id, "with value", value, "wei, withdrawing to multiple chains")
+	fmt.Println("chains:", ids)
+	fmt.Println("percents:", percents)
+
+	fmt.Scanln(&confirm)
+	if confirm == -1 { 
+		return
+	}
+	DepositMulti(chain, valBig, ids, percents)
+}
+
 func Prompt(chain *Chain, ks *keystore.KeyStore, fl map[string]bool, donePrompt chan bool) {
 	keys = ks
 	flags = fl
@@ -264,6 +331,8 @@ func Prompt(chain *Chain, ks *keystore.KeyStore, fl map[string]bool, donePrompt 
 	if flags["deposit"] {
 		DepositPrompt(chain)
 	}
+
+	DepositMultiPrompt(chain)
 
 	//donePrompt.Done()
 	donePrompt <- true

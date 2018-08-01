@@ -20,18 +20,15 @@ contract Bridge {
 	// the address of the BridgeSafe or any contract.
 	address public bridge;
 
+	mapping(address => uint) balance;
+
 	event ContractCreation(address _owner);
 	event BridgeSet(address _addr);
 	event BridgeFunded(address _addr);
-	// currently, we only specify the receiving address on the other chain
-	// and the value of the deposit.
-	// @todo: add `address _toChain` so that the user can specify which
-	// chain they wish to withdraw on. this makes the bridge "multi-directional.
+
 	event Deposit(address _recipient, uint _value, uint _toChain); 
 	event DepositErc20(address _recipient, uint _value); 
 
-	// @todo: similarly to the Deposit event, we eventually wish to add
-	// a `address _fromChain` argument
 	event Withdraw(address _recipient, uint _value, uint _fromChain); 
 	event WithdrawErc20(address _recipient, uint _value); 
 
@@ -53,8 +50,8 @@ contract Bridge {
 
 	/* bridge functions */
 	function () public payable {
-		revert();
-		//emit Deposit(msg.sender, msg.value);
+		//revert();
+		balance[msg.sender] += msg.value;
 	}
 
 	function fundBridge() public payable {
@@ -66,6 +63,12 @@ contract Bridge {
 		emit Deposit(_recipient, msg.value, _toChain);
 	}
 
+	function withdrawTo(address _recipient, uint _toChain, uint _value) public {
+		require(balance[msg.sender] >= _value);
+		balance[msg.sender] -= _value;
+		emit Deposit(_recipient, _value, _toChain);
+	}
+
 	function tokenFallback(address _sender, address _origin, uint _value, bytes _data) public returns (bool ok) {
 		emit DepositErc20(_origin, _value);
 		return true;
@@ -74,8 +77,6 @@ contract Bridge {
 	function setBridge(address _addr) public onlyOwner {
 		bridge = _addr;
 		emit BridgeSet(bridge);
-		//owner = 0x0; // remove owner after bridge is set?
-		// possibly risky. 
 	}
 
 	function withdraw(address _recipient, uint _value, uint _fromChain) public onlyBridge {
@@ -89,15 +90,15 @@ contract Bridge {
 	}
 
 	/* erc20 functions */
-	mapping(address => uint) balance;
+	mapping(address => uint) tokenBalance;
 	uint totalSupply;
 
 	event Transfer(address _to, uint _value);
 
 	function transfer(address _to, uint _value) public returns (bool) {
-		require(balance[msg.sender] >= _value);
-		balance[msg.sender] -= _value;
-		balance[_to] += _value;
+		require(tokenBalance[msg.sender] >= _value);
+		tokenBalance[msg.sender] -= _value;
+		tokenBalance[_to] += _value;
 		emit Transfer(_to, _value);
 		return true;
 	}

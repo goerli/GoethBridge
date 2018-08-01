@@ -46,6 +46,7 @@ func SetBridge(chain *Chain) () {
 }
 
 // id is the id of the chain to withdraw the deposit on
+// ids are in hexidecimal
 func Deposit(chain *Chain, value *big.Int, id string) {
 	client := chain.Client
 	//accounts := keys.Accounts()
@@ -64,6 +65,58 @@ func Deposit(chain *Chain, value *big.Int, id string) {
 	chain.Nonce = nonce
 
 	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(4600000), chain.GasPrice, data)
+	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
+	if err != nil {
+		fmt.Println("could not sign tx")
+		fmt.Println(err)
+	}
+
+	txHash := txSigned.Hash()
+	fmt.Println("attempting to send tx", txHash.Hex(), "to deposit on chain", chain.Id)
+
+	err = client.SendTransaction(context.Background(), txSigned)
+	if err != nil {
+		fmt.Println("could not send tx")
+		fmt.Println(err)
+	}
+}
+
+// ids are in hexidecimal
+func DepositMulti(chain *Chain, value *big.Int, ids []string, percents []*big.Int) {
+	client := chain.Client
+	//accounts := keys.Accounts()
+	from := new(accounts.Account)
+	from.Address = *chain.From
+	fmt.Println()
+
+	dataStr := "29a956bc000000000000000000000000" + chain.From.Hex()[2:] + 
+	"0000000000000000000000000000000000000000000000000000000000000006" + 
+	"000000000000000000000000000000000000000000000000000000000000000c"
+	dataStr = dataStr + padIntTo32Bytes(int64(len(ids)))
+	//fmt.Println(len(dataStr))
+	for _, id := range ids {
+		idPadded := padTo32Bytes(id)
+		dataStr = dataStr + idPadded
+	}
+
+	dataStr = dataStr + padIntTo32Bytes(int64(len(percents)))
+	//fmt.Println(len(dataStr))
+	for _, percent:= range percents {
+		percentPadded := padBigTo32Bytes(percent)
+		dataStr = dataStr + percentPadded
+	}
+
+	//fmt.Println("input data: ", dataStr)
+
+	data, err := hex.DecodeString(dataStr)
+	if err != nil {
+		fmt.Println(err)
+	} 
+
+	nonce, err := client.PendingNonceAt(context.Background(), *chain.From)
+	chain.Nonce = nonce
+
+	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(6700000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
 		fmt.Println("could not sign tx")
