@@ -117,15 +117,14 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 	//logs := <-ch
 	//fmt.Println(logs)
 	for _, log := range logs {
-		fmt.Println("\nlogs found on chain", chain.Id, "at block", log.BlockNumber)
-		fmt.Println("contract address: ", log.Address.Hex())
-		for _, topics := range log.Topics {
-			topic := topics.Hex()
-			fmt.Println("topics: ", topic)
+		txHash := log.TxHash.Hex()
+		if(!logsRead[txHash]) {
+			fmt.Println("\nlogs found on chain", chain.Id, "at block", log.BlockNumber)
+			fmt.Println("contract address: ", log.Address.Hex())
+			for _, topics := range log.Topics {
+				topic := topics.Hex()
+				fmt.Println("topics: ", topic)
 
-			txHash := log.TxHash.Hex()
-
-			if(!logsRead[txHash]) {
 				if strings.Compare(topic, events.DepositId) == 0 { 
 					fmt.Println("*** deposit event")
 					fmt.Println("txHash: ", txHash)
@@ -149,9 +148,8 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 					fmt.Println("*** funded bridge event")
 					fmt.Println("txHash: ", txHash)
 				}
-
-				logsRead[txHash] = true
 			}
+			logsRead[txHash] = true
 		}
 	}
 	logsDone <- true
@@ -220,20 +218,18 @@ func SetBridge(chain *Chain) () {
 		fmt.Println(err)
 	} 
 
-	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
-	chain.Nonce = nonce + 1
+	nonce, err := client.PendingNonceAt(context.Background(), *chain.From)
+	chain.Nonce = nonce
 
 	tx := types.NewTransaction(chain.Nonce, *chain.Contract, big.NewInt(int64(0)), uint64(4600000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
-		log.Fatal(err)
-	}
-	txHash := txSigned.Hash()
-	fmt.Println("attempting to send tx", txHash.Hex(), "to set bridge")
-	if err != nil {
 		fmt.Println("could not sign tx")
 		fmt.Println(err)
 	}
+
+	txHash := txSigned.Hash()
+	fmt.Println("attempting to send tx", txHash.Hex(), "to set bridge")
 
 	err = client.SendTransaction(context.Background(), txSigned)
 	if err != nil {
@@ -261,20 +257,18 @@ func Deposit(chain *Chain, value *big.Int, id string) {
 		fmt.Println(err)
 	} 
 
-	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
-	chain.Nonce = nonce 
+	nonce, err := client.PendingNonceAt(context.Background(), *chain.From)
+	chain.Nonce = nonce
 
 	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(4600000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
-		log.Fatal(err)
-	}
-	txHash := txSigned.Hash()
-	fmt.Println("attempting to send tx", txHash.Hex(), "to deposit on chain", chain.Id)
-	if err != nil {
 		fmt.Println("could not sign tx")
 		fmt.Println(err)
 	}
+
+	txHash := txSigned.Hash()
+	fmt.Println("attempting to send tx", txHash.Hex(), "to deposit on chain", chain.Id)
 
 	err = client.SendTransaction(context.Background(), txSigned)
 	if err != nil {
@@ -303,20 +297,18 @@ func Withdraw(chain *Chain, withdrawal *Withdrawal) {
 		fmt.Println(err)
 	} 
 
-	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
+	nonce, err := client.PendingNonceAt(context.Background(), *chain.From)
 	chain.Nonce = nonce
 
 	tx := types.NewTransaction(chain.Nonce, *chain.Contract, big.NewInt(int64(0)), uint64(4600000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
-		log.Fatal(err)
-	}
-	txHash := txSigned.Hash()
-	fmt.Println("attempting to send tx", txHash.Hex(), "to withdraw on chain", chain.Id)
-	if err != nil {
 		fmt.Println("could not sign tx")
 		fmt.Println(err)
 	}
+
+	txHash := txSigned.Hash()
+	fmt.Println("attempting to send tx", txHash.Hex(), "to withdraw on chain", chain.Id)
 
 	err = client.SendTransaction(context.Background(), txSigned)
 	if err != nil {
@@ -336,20 +328,18 @@ func FundBridge(chain *Chain, value *big.Int) {
 		fmt.Println(err)
 	} 
 
-	nonce, err := client.NonceAt(context.Background(), *chain.From, nil)
+	nonce, err := client.PendingNonceAt(context.Background(), *chain.From)
 	chain.Nonce = nonce
 
 	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(4600000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
-		log.Fatal(err)
-	}
-	txHash := txSigned.Hash()
-	fmt.Println("attempting to send tx", txHash.Hex(), "to fund bridge on chain", chain.Id, "with value", value.String())
-	if err != nil {
 		fmt.Println("could not sign tx")
 		fmt.Println(err)
 	}
+
+	txHash := txSigned.Hash()
+	fmt.Println("attempting to send tx", txHash.Hex(), "to fund bridge on chain", chain.Id, "with value", value.String())
 
 	err = client.SendTransaction(context.Background(), txSigned)
 	if err != nil {
@@ -384,9 +374,9 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 	if chain.Id.Cmp(big.NewInt(4)) == 0 {
 		Deposit(chain, value, "3")
 	}
-	// if chain.Id.Cmp(big.NewInt(3)) == 0 {
-	// 	Deposit(chain, "4")
-	// }
+	if chain.Id.Cmp(big.NewInt(3)) == 0 {
+		Deposit(chain, value, "4")
+	}
 	//value := big.NewInt(1000000000000000)
 	//FundBridge(chain, value)
 
@@ -399,6 +389,9 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 		if flags["v"] { fmt.Println(t) }
 
 		block, err := client.BlockByNumber(context.Background(), nil)
+		if err != nil {
+			log.Fatal(err)
+		}
 		if fromBlock != block.Number() {
 			if err != nil { log.Fatal(err) }
 			if flags["v"] { fmt.Println("latest block: ", block.Number()) }

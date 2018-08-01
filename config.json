@@ -21,7 +21,7 @@
 	},
 	"3": {
 		"url": "https://ropsten.infura.io",
-		"contractAddr": "0xd459b53f1d39aee171e62b57df34e173db9b0646",
+		"contractAddr": "0x2d8002dfd9e1c62982950a691951b2238da5a5f7",
 		"safeAddr": "0x0",
 		"depositEvent": "Deposit",
 		"withdrawEvent": "Withdraw",
@@ -30,7 +30,7 @@
 	},
 	"4": {
 		"url": "https://rinkeby.infura.io",
-		"contractAddr": "0x287d4d8fd9a84c4f99d19911c37de071eef9dbd4",
+		"contractAddr": "0x86c4c23c1426fd72092ff185c96e2260d406b561",
 		"safeAddr": "0x0",
 		"depositEvent": "Deposit",
 		"withdrawEvent": "Withdraw",
