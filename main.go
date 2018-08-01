@@ -99,7 +99,8 @@ func main() {
 
 	fundBridgePtr := flag.Bool("fund", false, "a bool; if true, prompt user to fund bridge contract")
 	depositPtr := flag.Bool("deposit", false, "a bool; if true, prompt user to deposit to bridge contract")
-
+	noListenPtr := flag.Bool("no-listen", false, "a bool; if true, do not start the listener. this would be used to only make deposits or other contract interactions")
+	
 	flag.Parse()
 	configStr := *configPtr
 	fmt.Println("config path: ", configStr)
@@ -123,12 +124,14 @@ func main() {
 
 	fundBridge := *fundBridgePtr
 	deposit := *depositPtr
+	noListen := *noListenPtr
 
 	flags = make(map[string]bool)
 	flags["v"] = verbose
 	flags["a"] = readAll
 	flags["fund"] = fundBridge
 	flags["deposit"] = deposit
+	flags["nolisten"] = noListen
 
 	/* keys */
 	ks = newKeyStore(keystorePath)
@@ -239,11 +242,13 @@ func main() {
 		<-donePrompt
 	}
 
-	/* listener */
-	fmt.Println("\nlistening for events...")
-	for _, chain := range clients {
-		go client.Listen(chain, clients, events, doneClient, ks, flags)
-	}
+	if(!noListen) {
+		/* listener */
+		fmt.Println("\nlistening for events...")
+		for _, chain := range clients {
+			go client.Listen(chain, clients, events, doneClient, ks, flags)
+		}
 
-	<-doneClient
+		<-doneClient
+	}
 }
