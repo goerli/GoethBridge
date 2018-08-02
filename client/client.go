@@ -215,7 +215,9 @@ func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdra
 	withdrawDone <- true
 }
 
-func FundPrompt(chain *Chain) {
+func FundPrompt(chain *Chain, ks *keystore.KeyStore) {
+	keys = ks
+
 	var value int64
 	var confirm int64
 	fmt.Println("\nfunding the bridge contract on chain", chain.Id)
@@ -234,7 +236,9 @@ func FundPrompt(chain *Chain) {
 	FundBridge(chain, valBig)
 }
 
-func DepositPrompt(chain *Chain) {
+func DepositPrompt(chain *Chain, ks *keystore.KeyStore) {
+	keys = ks
+
 	var value int64
 	var to int64
 	var confirm int64
@@ -263,7 +267,9 @@ func DepositPrompt(chain *Chain) {
 	Deposit(chain, valBig, toHex)
 }
 
-func WithdrawToPrompt(chain *Chain) {
+func WithdrawToPrompt(chain *Chain, ks *keystore.KeyStore) {
+	keys = ks
+
 	var value int64
 	var to int64
 	var confirm int64
@@ -291,7 +297,9 @@ func WithdrawToPrompt(chain *Chain) {
 	WithdrawTo(chain, valBig, toHex)
 }
 
-func PayBridgePrompt(chain *Chain) {
+func PayBridgePrompt(chain *Chain, ks *keystore.KeyStore) {
+	keys = ks
+	
 	var value int64
 	var confirm int64
 	fmt.Println("\npaying bridge contract on chain", chain.Id)
@@ -313,31 +321,32 @@ func PayBridgePrompt(chain *Chain) {
 	PayBridge(chain, valBig)
 }
 
-func Prompt(chain *Chain, ks *keystore.KeyStore, fl map[string]bool, donePrompt chan bool) {
-	keys = ks
-	flags = fl
+// func Prompt(chain *Chain, ks *keystore.KeyStore, fl map[string]bool, donePrompt chan bool) {
+// 	keys = ks
+// 	flags = fl
 
-	/* prompt for fund bridge info */
-	if flags["fund"] {
-		FundPrompt(chain)
-	}
+// 	/* prompt for fund bridge info */
+// 	if flags["fund"] {
+// 		FundPrompt(chain)
+// 	}
 
-	/* prompt for deposit info */
-	if flags["deposit"] {
-		DepositPrompt(chain)
-	}
+// 	// prompt for deposit info 
+// 	if flags["deposit"] {
+// 		DepositPrompt(chain)
+// 	}
 
-	if flags["pay"] {
-		PayBridgePrompt(chain)
-	}
+// 	if flags["pay"] {
+// 		PayBridgePrompt(chain)
+// 	}
 
-	if flags["withdraw"] {
-		WithdrawToPrompt(chain)
-	}
+// 	if flags["withdraw"] {
+// 		WithdrawToPrompt(chain)
+// 	}
 
-	//donePrompt.Done()
-	donePrompt <- true
-}
+// 	//donePrompt.Done()
+// 	donePrompt <- true
+// }
+
 // main goroutine
 // starts a client to listen on every chain 
 func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keystore.KeyStore, fl map[string]bool) {

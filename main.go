@@ -13,6 +13,7 @@ import (
 	"strings"
 	"log"
 	"flag"
+	"os"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/common"
@@ -86,9 +87,6 @@ func readAbi() (*client.Events) {
 }
 
 func main() {
-	/* read abi of contract in truffle folder */
-	events := readAbi()
-
 	/* flags */
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
 	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
@@ -97,11 +95,30 @@ func main() {
 	// password flag assumes you have the same account on every chain
 	passwordPtr := flag.String("password", "password", "a string of the password to the account specified in the config file") 
 
-	fundBridgePtr := flag.Bool("fund", false, "a bool; if true, prompt user to fund bridge contract")
-	depositPtr := flag.Bool("deposit", false, "a bool; if true, prompt user to deposit to bridge contract")
-	noListenPtr := flag.Bool("no-listen", false, "a bool; if true, do not start the listener. this would be used to only make deposits or other contract interactions")
-	payPtr := flag.Bool("pay", false, "a bool; if true, prompt user to pay bridge contract")
-	withdrawPtr := flag.Bool("withdraw", false, "a bool; if true, prompt user to withdraw from bridge contract to another chain")
+	noListenPtr := flag.Bool("no-listen", false, "a bool; if true, do not start the listener")
+
+	//fundBridgePtr := flag.Bool("fund", false, "a bool; if true, prompt user to fund bridge contract")
+	//depositPtr := flag.Bool("deposit", false, "a bool; if true, prompt user to deposit to bridge contract")
+	//payPtr := flag.Bool("pay", false, "a bool; if true, prompt user to pay bridge contract")
+	//withdrawPtr := flag.Bool("withdraw", false, "a bool; if true, prompt user to withdraw from bridge contract to another chain")
+
+	depositCommand := flag.NewFlagSet("deposit", flag.ExitOnError)
+	fundCommand := flag.NewFlagSet("fund", flag.ExitOnError)
+	payCommand := flag.NewFlagSet("payCommand", flag.ExitOnError)
+	withdrawCommand := flag.NewFlagSet("withrawCommand", flag.ExitOnError)
+
+	switch os.Args[1]{
+		case "deposit":
+			depositCommand.Parse(os.Args[2:])
+		case "fund":
+			fundCommand.Parse(os.Args[2:])
+		case "pay":
+			payCommand.Parse(os.Args[2:])
+		case "withdraw":
+			withdrawCommand.Parse(os.Args[2:])
+		default:
+			// continue
+	}
 
 	flag.Parse()
 	configStr := *configPtr
@@ -113,31 +130,46 @@ func main() {
 	readAll := *readAllPtr
 	if readAll { fmt.Println("read from all contracts? ", readAll)}
 
-	chains := flag.Args()
-	if len(chains) == 0 {
-		chains = append(chains,"33")
-	}
-	fmt.Println("chains to connect to: ", chains)
-
 	keystorePath := *keysPtr
 	fmt.Println("keystore path: ", keystorePath)
 
 	password := *passwordPtr
 
-	fundBridge := *fundBridgePtr
-	deposit := *depositPtr
+	//fundBridge := *fundBridgePtr
+	//deposit := *depositPtr
 	noListen := *noListenPtr
-	pay := *payPtr
-	withdraw := *withdrawPtr
+	//pay := *payPtr
+	//withdraw := *withdrawPtr
+
+	var chains []string
+	if depositCommand.Parsed() {
+		chains = depositCommand.Args()
+		fmt.Println("deposit to:", chains)
+	} else if fundCommand.Parsed() {
+		chains = fundCommand.Args()
+		fmt.Println("fund bridge on chains", chains)
+	} else if payCommand.Parsed() {
+		chains = payCommand.Args()
+		fmt.Println("pay bridge on chains", chains)
+	} else if withdrawCommand.Parsed() {
+		chains = withdrawCommand.Args()
+		fmt.Println("withdraw from bridge on chains", chains)
+	} else {
+		chains = flag.Args()
+		if len(chains) == 0 {
+			chains = append(chains,"1")
+		}
+		fmt.Println("chains to connect to: ", chains)
+	}
 
 	flags = make(map[string]bool)
 	flags["v"] = verbose
 	flags["a"] = readAll
-	flags["fund"] = fundBridge
-	flags["deposit"] = deposit
+	//flags["fund"] = fundBridge
+	//flags["deposit"] = deposit
 	flags["nolisten"] = noListen
-	flags["pay"] = pay
-	flags["withdraw"] = withdraw
+	//flags["pay"] = pay
+	//flags["withdraw"] = withdraw
 
 	/* keys */
 	ks = newKeyStore(keystorePath)
@@ -237,16 +269,62 @@ func main() {
 		chain.Client = chainClient
 	}
 
+	/* read abi of contract in truffle folder */
+	events := readAbi()
+
+	if depositCommand.Parsed() {
+		for _, chain := range chains {
+			id, err := new(big.Int).SetString(chain, 10)
+			if err != true {
+				log.Fatal("could not find chain", chain)
+			}
+			chain := client.FindChain(id, clients)
+			client.DepositPrompt(chain, ks)
+		}
+		return
+	} else if fundCommand.Parsed() {
+		for _, chain := range chains {
+			id, err := new(big.Int).SetString(chain, 10)
+			if err != true {
+				log.Fatal("could not find chain", chain)
+			}
+			chain := client.FindChain(id, clients)
+			client.FundPrompt(chain, ks)
+		}
+		return
+	} else if payCommand.Parsed() {
+		for _, chain := range chains {
+			id, err := new(big.Int).SetString(chain, 10)
+			if err != true {
+				log.Fatal("could not find chain", chain)
+			}
+			chain := client.FindChain(id, clients)
+			client.PayBridgePrompt(chain, ks)
+		}
+		return
+	} else if  withdrawCommand.Parsed() {
+		for _, chain := range chains {
+			id, err := new(big.Int).SetString(chain, 10)
+			if err != true {
+				log.Fatal("could not find chain", chain)
+			}
+			chain := client.FindChain(id, clients)
+			client.WithdrawToPrompt(chain, ks)
+		}
+		return	
+	}
+
+
 	/* channels */
 	doneClient := make(chan bool)
-	donePrompt := make(chan bool)
+	// donePrompt := make(chan bool)
 
-	/* prompt, if flags set */
-	for _, chain := range clients {
-		/* prompt if flags set & listen */
-		go client.Prompt(chain, ks, flags, donePrompt)
-		<-donePrompt
-	}
+	// /* prompt, if flags set */
+	// for _, chain := range clients {
+	// 	// prompt if flags set & listen 
+	// 	go client.Prompt(chain, ks, flags, donePrompt)
+	// 	<-donePrompt
+	// }
 
 	if(!noListen) {
 		/* listener */
