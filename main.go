@@ -37,7 +37,7 @@ func newKeyStore(path string) (*keystore.KeyStore) {
 	return newKeyStore
 }
 
-func readAbi() (*client.Events) {
+func readAbi(verbose bool) (*client.Events) {
 	e := new(client.Events)
 
 	// read bridge contract abi
@@ -62,31 +62,43 @@ func readAbi() (*client.Events) {
 	depositEvent := bridgeEvents["Deposit"]
 	depositHash := depositEvent.Id()
 	e.DepositId = depositHash.Hex()
-	fmt.Println("deposit event id: ", e.DepositId) // this is the deposit event to watch for
+	if verbose { fmt.Println("deposit event id: ", e.DepositId) }
 
 	creationEvent := bridgeEvents["ContractCreation"]
 	creationHash := creationEvent.Id()
 	e.CreationId = creationHash.Hex()
-	fmt.Println("contract creation event id: ", e.CreationId)
+	if verbose { fmt.Println("contract creation event id: ", e.CreationId) }
 
 	withdrawEvent := bridgeEvents["Withdraw"]
 	withdrawHash := withdrawEvent.Id()
 	e.WithdrawId = withdrawHash.Hex()
-	fmt.Println("withdraw event id: ", e.WithdrawId)
+	if verbose { fmt.Println("withdraw event id: ", e.WithdrawId) }
 
 	bridgeSetEvent := bridgeEvents["BridgeSet"]
 	bridgeSetHash := bridgeSetEvent.Id()
 	e.BridgeSetId = bridgeSetHash.Hex()
-	fmt.Println("set bridge event id: ", e.BridgeSetId)
+	if verbose { fmt.Println("set bridge event id: ", e.BridgeSetId) }
 
 	bridgeFundedEvent := bridgeEvents["BridgeFunded"]
 	bridgeFundedHash := bridgeFundedEvent.Id()
 	e.BridgeFundedId = bridgeFundedHash.Hex()
-	fmt.Println("bridge funded event id: ", e.BridgeFundedId)
+	if verbose { fmt.Println("bridge funded event id: ", e.BridgeFundedId) }
+
+	paidEvent := bridgeEvents["Paid"]
+	paidHash := paidEvent.Id()
+	e.PaidId = paidHash.Hex()
+	fmt.Println("bridge paid event id", e.PaidId)
 	return e
 }
 
 func main() {
+	fmt.Println("██████╗ ██████╗ ██╗██████╗  ██████╗ ███████╗")
+	fmt.Println("██╔══██╗██╔══██╗██║██╔══██╗██╔════╝ ██╔════╝")
+	fmt.Println("██████╔╝██████╔╝██║██║  ██║██║  ███╗█████╗  ")
+	fmt.Println("██╔══██╗██╔══██╗██║██║  ██║██║   ██║██╔══╝  ")
+	fmt.Println("██████╔╝██║  ██║██║██████╔╝╚██████╔╝███████╗")
+	fmt.Println("╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝  ╚═════╝ ╚══════╝")
+
 	/* flags */
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
 	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
@@ -107,17 +119,19 @@ func main() {
 	payCommand := flag.NewFlagSet("payCommand", flag.ExitOnError)
 	withdrawCommand := flag.NewFlagSet("withrawCommand", flag.ExitOnError)
 
-	switch os.Args[1]{
-		case "deposit":
-			depositCommand.Parse(os.Args[2:])
-		case "fund":
-			fundCommand.Parse(os.Args[2:])
-		case "pay":
-			payCommand.Parse(os.Args[2:])
-		case "withdraw":
-			withdrawCommand.Parse(os.Args[2:])
-		default:
-			// continue
+	if len(os.Args) > 1 {
+		switch os.Args[1]{
+			case "deposit":
+				depositCommand.Parse(os.Args[2:])
+			case "fund":
+				fundCommand.Parse(os.Args[2:])
+			case "pay":
+				payCommand.Parse(os.Args[2:])
+			case "withdraw":
+				withdrawCommand.Parse(os.Args[2:])
+			default:
+				// continue
+		}
 	}
 
 	flag.Parse()
@@ -134,12 +148,7 @@ func main() {
 	fmt.Println("keystore path: ", keystorePath)
 
 	password := *passwordPtr
-
-	//fundBridge := *fundBridgePtr
-	//deposit := *depositPtr
 	noListen := *noListenPtr
-	//pay := *payPtr
-	//withdraw := *withdrawPtr
 
 	var chains []string
 	if depositCommand.Parsed() {
@@ -165,11 +174,7 @@ func main() {
 	flags = make(map[string]bool)
 	flags["v"] = verbose
 	flags["a"] = readAll
-	//flags["fund"] = fundBridge
-	//flags["deposit"] = deposit
 	flags["nolisten"] = noListen
-	//flags["pay"] = pay
-	//flags["withdraw"] = withdraw
 
 	/* keys */
 	ks = newKeyStore(keystorePath)
@@ -270,7 +275,7 @@ func main() {
 	}
 
 	/* read abi of contract in truffle folder */
-	events := readAbi()
+	events := readAbi(flags["v"])
 
 	if depositCommand.Parsed() {
 		for _, chain := range chains {

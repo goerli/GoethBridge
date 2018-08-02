@@ -53,6 +53,7 @@ type Events struct {
  	WithdrawId string
 	BridgeSetId string
 	BridgeFundedId string
+	PaidId string
 }
 
 /****** helpers ********/
@@ -158,6 +159,9 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 					fmt.Println("txHash: ", txHash)
 				} else if strings.Compare(topic, events.BridgeFundedId) == 0 {
 					fmt.Println("*** funded bridge event")
+					fmt.Println("txHash: ", txHash)
+				} else if strings.Compare(topic, events.PaidId) == 0 {
+					fmt.Println("*** bridge paid event")
 					fmt.Println("txHash: ", txHash)
 				}
 			}
@@ -299,7 +303,7 @@ func WithdrawToPrompt(chain *Chain, ks *keystore.KeyStore) {
 
 func PayBridgePrompt(chain *Chain, ks *keystore.KeyStore) {
 	keys = ks
-	
+
 	var value int64
 	var confirm int64
 	fmt.Println("\npaying bridge contract on chain", chain.Id)

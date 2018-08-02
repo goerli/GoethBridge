@@ -24,7 +24,7 @@
 	},
 	"4": {
 		"url": "https://rinkeby.infura.io",
-		"contractAddr": "0xc8d3fa80ab41b222a89084a3fb8b30bd8ddbb7a3",
+		"contractAddr": "0x9462c0c7b13111fc8608b8eaf92d69b36ed6b578",
 		"gasPrice": "10000000",
 		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},
