@@ -28,7 +28,7 @@
 		"gasPrice": "10000000",
 		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},
-	"33": {
+	"1337": { // geth local chain
 		"url": "http://127.0.0.1:8545",
 		"contractAddr": "0x7f69dff8a1ae5b2958d97fdefbc600af8c9a0623",
 		"gasPrice": "10000000",
@@ -39,7 +39,12 @@
 		"contractAddr": "0xc40784a328bbf731db354dfb8188cf3dd02a446d",
 		"gasPrice": "5000000",
 		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
+	},
+	"31": { // rootstock testnet
+		"url": "http://127.0.0.1:4444",
+		//"url": "https://public-node.testnet.rsk.co",
+		"contractAddr": "0xae936fa2b42d8918b2dad2b17baf42478c9f04c9",
+		"gasPrice": "100000000",
+		"from": "0xae936fa2b42d8918b2dad2b17baf42478c9f04c9"
 	}
 }
-
-

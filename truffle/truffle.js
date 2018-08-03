@@ -52,6 +52,12 @@ module.exports = {
       		network_id: 1,
       		gas: 1000000,
       		gasLimit: 67000000
-   	}  
+   	},
+	rsk: {
+		host: "localhost",
+		port: 4444,
+		from: "0xae936fa2b42d8918b2dad2b17baf42478c9f04c9",
+		network_id: "*"
+	}
     }
 };

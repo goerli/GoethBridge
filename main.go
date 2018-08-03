@@ -106,13 +106,7 @@ func main() {
 	keysPtr := flag.String("keystore", "./keystore", "a string of the path to the keystore directory") 
 	// password flag assumes you have the same account on every chain
 	passwordPtr := flag.String("password", "password", "a string of the password to the account specified in the config file") 
-
 	noListenPtr := flag.Bool("no-listen", false, "a bool; if true, do not start the listener")
-
-	//fundBridgePtr := flag.Bool("fund", false, "a bool; if true, prompt user to fund bridge contract")
-	//depositPtr := flag.Bool("deposit", false, "a bool; if true, prompt user to deposit to bridge contract")
-	//payPtr := flag.Bool("pay", false, "a bool; if true, prompt user to pay bridge contract")
-	//withdrawPtr := flag.Bool("withdraw", false, "a bool; if true, prompt user to withdraw from bridge contract to another chain")
 
 	depositCommand := flag.NewFlagSet("deposit", flag.ExitOnError)
 	fundCommand := flag.NewFlagSet("fund", flag.ExitOnError)
