@@ -353,7 +353,7 @@ func PayBridgePrompt(chain *Chain, ks *keystore.KeyStore) {
 
 // main goroutine
 // starts a client to listen on every chain 
-func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keystore.KeyStore, fl map[string]bool) {
+func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, latestBlock chan int64, ks *keystore.KeyStore, fl map[string]bool) {
 	// set up global vars
 	events = e
 	keys = ks
@@ -395,6 +395,7 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 			fromBlock = block.Number()
 		}
 
+		latestBlock <- fromBlock.Int64()
 		filter.FromBlock = fromBlock
 		if !flags["a"] {
 			contractArr := make([]common.Address, 1)

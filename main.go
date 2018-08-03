@@ -14,6 +14,8 @@ import (
 	"log"
 	"flag"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/common"
@@ -91,6 +93,19 @@ func readAbi(verbose bool) (*client.Events) {
 	return e
 }
 
+func cleanup(lastBlock int64) {
+    f, err := os.Create("lastblock.txt") // creating...
+   	if err != nil {
+        fmt.Printf("error creating file: %v", err)
+        return
+    }
+    defer f.Close()
+    _, err = f.WriteString(fmt.Sprintf("%d\n", lastBlock)) // writing...
+    if err != nil {
+        fmt.Printf("error writing string: %v", err)
+    }
+}
+
 func main() {
 	fmt.Println("██████╗ ██████╗ ██╗██████╗  ██████╗ ███████╗")
 	fmt.Println("██╔══██╗██╔══██╗██║██╔══██╗██╔════╝ ██╔════╝")
@@ -113,6 +128,8 @@ func main() {
 	payCommand := flag.NewFlagSet("payCommand", flag.ExitOnError)
 	withdrawCommand := flag.NewFlagSet("withrawCommand", flag.ExitOnError)
 
+	// subcommands
+	// ./b
 	if len(os.Args) > 1 {
 		switch os.Args[1]{
 			case "deposit":
@@ -313,23 +330,28 @@ func main() {
 		return	
 	}
 
+	/* variables */
+	var lastBlock int64
 
 	/* channels */
 	doneClient := make(chan bool)
-	// donePrompt := make(chan bool)
+	lastBlockChan := make(chan int64)
 
-	// /* prompt, if flags set */
-	// for _, chain := range clients {
-	// 	// prompt if flags set & listen 
-	// 	go client.Prompt(chain, ks, flags, donePrompt)
-	// 	<-donePrompt
-	// }
+
+	c := make(chan os.Signal)
+    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+    go func() {
+        <-c
+        lastBlock =<- lastBlockChan
+        cleanup(lastBlock)
+        os.Exit(1)
+    }()
 
 	if(!noListen) {
 		/* listener */
 		fmt.Println("\nlistening for events...")
 		for _, chain := range clients {
-			go client.Listen(chain, clients, events, doneClient, ks, flags)
+			go client.Listen(chain, clients, events, doneClient, lastBlockChan, ks, flags)
 		}
 
 		<-doneClient
