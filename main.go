@@ -88,7 +88,7 @@ func readAbi(verbose bool) (*client.Events) {
 	paidEvent := bridgeEvents["Paid"]
 	paidHash := paidEvent.Id()
 	e.PaidId = paidHash.Hex()
-	fmt.Println("bridge paid event id", e.PaidId)
+	if verbose { fmt.Println("bridge paid event id", e.PaidId) }
 	return e
 }
 
@@ -103,14 +103,18 @@ func startup(id *big.Int) (*big.Int) {
 	return startBlock
 }
 
-func main() {
+func printHeader() {
 	fmt.Println("██████╗ ██████╗ ██╗██████╗  ██████╗ ███████╗")
 	fmt.Println("██╔══██╗██╔══██╗██║██╔══██╗██╔════╝ ██╔════╝")
 	fmt.Println("██████╔╝██████╔╝██║██║  ██║██║  ███╗█████╗  ")
 	fmt.Println("██╔══██╗██╔══██╗██║██║  ██║██║   ██║██╔══╝  ")
 	fmt.Println("██████╔╝██║  ██║██║██████╔╝╚██████╔╝███████╗")
 	fmt.Println("╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝  ╚═════╝ ╚══════╝")
+}
 
+func main() {
+	printHeader()
+	
 	/* flags */
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
 	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
@@ -206,6 +210,7 @@ func main() {
 		clients[i].Id = new(big.Int)
 		clients[i].Id.SetString(chain, 10)
 
+		// to start at block 0, `rm -rf log/`
 		startBlock := startup(clients[i].Id)
 		clients[i].StartBlock = startBlock
 

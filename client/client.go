@@ -174,25 +174,27 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 	logsDone <- true
 }
 
+func waitOnPending(chain *Chain, txHash common.Hash) (*types.Transaction) {
+	for {
+		tx, isPending, err := chain.Client.TransactionByHash(context.Background(), txHash)
+		if err != nil {
+			fmt.Println(err)
+		}
+		if !isPending { return tx }
+	}
+}
+
 func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdrawDone chan bool) {
-	tx, isPending, err := chain.Client.TransactionByHash(context.Background(), txHash)
-	if isPending {
-		// wait
-	}
-	if err != nil {
-		fmt.Println(err)
-	}
+	tx := waitOnPending(chain, txHash)
 
 	withdrawal := new(Withdrawal)
-
 	data := hex.EncodeToString(tx.Data())
-	//fmt.Println("data: ", data)
-	//fmt.Println(len(data))
+
 	if len(data) > 72 {
 		receiver := data[32:72];
 		toChain := data[72:136]
 		value := tx.Value()
-		// receiver, value, toChain := readDepositData(data)
+
 		fmt.Println("receiver: ", receiver) 
 		fmt.Println("value: ", value) // in hexidecimal
 		fmt.Println("to chain: ", toChain) // in hexidecimal
@@ -204,14 +206,8 @@ func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdra
 		fromChain := new(big.Int)
 		fromChain.SetString(toChain, 16)
 		fmt.Println("chain to withdraw to: ", fromChain)
-		//fmt.Println(fromChain)
-		//chainIndex := IdsToChainIndex[fromChain]
-		//fmt.Println("chain to withdraw to: ", allChains[fromChain])
-		// idx := findChainIndex(chain.Id, allChains)
-		// fmt.Println("deposit chain id: ", chain.Id, allChains[idx])
 
 		idx := findChainIndex(fromChain, allChains)
-		//fmt.Println("withdraw chain id: ", fromChain, allChains[idx])
 
 		if idx == -1 {
 			fmt.Println("could not find chain to withdraw to")
