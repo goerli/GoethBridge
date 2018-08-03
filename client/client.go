@@ -10,8 +10,10 @@ import (
 	"context"
 	"log"
 	"strings"
-	//"sync"
-	//"path/filepath"
+	"os"
+	"os/signal"
+	"syscall"
+	"sync"
 
 	//"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -37,6 +39,7 @@ type Chain struct {
 	Password string
 	Client *ethclient.Client
 	Nonce uint64
+	StartBlock *big.Int
 }
 
 type Withdrawal struct {
@@ -353,7 +356,7 @@ func PayBridgePrompt(chain *Chain, ks *keystore.KeyStore) {
 
 // main goroutine
 // starts a client to listen on every chain 
-func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, latestBlock chan int64, ks *keystore.KeyStore, fl map[string]bool) {
+func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keystore.KeyStore, fl map[string]bool, wg *sync.WaitGroup) {
 	// set up global vars
 	events = e
 	keys = ks
@@ -369,33 +372,27 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, latestBl
 
 	fmt.Println("listening at: " + chain.Url)
 
-	fromBlock := big.NewInt(1)
+	fromBlock := chain.StartBlock
+	//lastBlocks[chain.Id] <- fromBlock
+	fmt.Println("starting block at chain", chain.Id, ":", fromBlock)
 	filter := new(ethereum.FilterQuery)
+
+	c := make(chan os.Signal)
+    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+    go func() {
+        <-c
+        Cleanup(chain, fromBlock, wg)
+        wg.Wait()
+        os.Exit(1)
+    }()
 
 	// every second, check for new logs and update block number
 	ticker := time.NewTicker(1000 * time.Millisecond)
 	for t := range ticker.C{
 		if flags["v"] { fmt.Println(t) }
 
-		block, err := client.BlockByNumber(context.Background(), nil)
-		if err != nil {
-			//log.Fatal(err)
-			//fmt.Println("could not get block with ethclient.. trying http request")
-			blockNum, err := getBlockNumber(chain.Url)
-			if err != nil {
-				log.Fatal(err)
-			}
-			if flags["v"] { fmt.Println("latest block: ", blockNum) }
-			fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
+		//lastBlock <- fromBlock
 
-			//fmt.Println("fromBlock: ", fromBlock)
-		} else if fromBlock != block.Number() {
-			if err != nil { log.Fatal(err) }
-			if flags["v"] { fmt.Println("latest block: ", block.Number()) }
-			fromBlock = block.Number()
-		}
-
-		latestBlock <- fromBlock.Int64()
 		filter.FromBlock = fromBlock
 		if !flags["a"] {
 			contractArr := make([]common.Address, 1)
@@ -404,11 +401,28 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, latestBl
 		}
 		logsDone := make(chan bool)
 		go Filter(chain, allChains, filter, logsDone)
+
+		block, err := client.BlockByNumber(context.Background(), nil)
+		if err != nil {
+			//fmt.Println("could not get block with ethclient.. trying http request")
+			blockNum, err := getBlockNumber(chain.Url)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if flags["v"] { fmt.Println("latest block: ", blockNum) }
+			fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
+		} else if fromBlock != block.Number() {
+			if err != nil { log.Fatal(err) }
+			if flags["v"] { fmt.Println("latest block: ", block.Number()) }
+			fromBlock = block.Number()
+		}
+
 		<-logsDone
+
+		//lastBlock <- fromBlock
 	}
  
-	// bridge timeout. eventually, change so it never times out
-	time.Sleep(6000 * time.Second)
-	ticker.Stop()
+ 	//time.Sleep(6000 * time.Second)
+	//ticker.Stop()
 	doneClient <- true
 }

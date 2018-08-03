@@ -14,8 +14,7 @@ import (
 	"log"
 	"flag"
 	"os"
-	"os/signal"
-	"syscall"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/common"
@@ -93,17 +92,15 @@ func readAbi(verbose bool) (*client.Events) {
 	return e
 }
 
-func cleanup(lastBlock int64) {
-    f, err := os.Create("lastblock.txt") // creating...
-   	if err != nil {
-        fmt.Printf("error creating file: %v", err)
-        return
-    }
-    defer f.Close()
-    _, err = f.WriteString(fmt.Sprintf("%d\n", lastBlock)) // writing...
-    if err != nil {
-        fmt.Printf("error writing string: %v", err)
-    }
+func startup(id *big.Int) (*big.Int) {
+	path, _ := filepath.Abs("./log/" + id.String() + "_lastblock.txt")
+	file, err := ioutil.ReadFile(path)
+	if err != nil {
+	    fmt.Println("Failed to read file:", err)
+	}
+	startBlock := new(big.Int)
+	startBlock.SetString(string(file), 10)
+	return startBlock
 }
 
 func main() {
@@ -208,6 +205,9 @@ func main() {
 
 		clients[i].Id = new(big.Int)
 		clients[i].Id.SetString(chain, 10)
+
+		startBlock := startup(clients[i].Id)
+		clients[i].StartBlock = startBlock
 
 		chainStr, err := client.ParseJsonForEntry(string(file), chain)
 		if err != nil {
@@ -330,28 +330,18 @@ func main() {
 		return	
 	}
 
-	/* variables */
-	var lastBlock int64
-
 	/* channels */
 	doneClient := make(chan bool)
-	lastBlockChan := make(chan int64)
 
-
-	c := make(chan os.Signal)
-    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-    go func() {
-        <-c
-        lastBlock =<- lastBlockChan
-        cleanup(lastBlock)
-        os.Exit(1)
-    }()
+	// wait group for interrupt handling
+	wg := new(sync.WaitGroup)
+	wg.Add(len(clients))
 
 	if(!noListen) {
 		/* listener */
 		fmt.Println("\nlistening for events...")
 		for _, chain := range clients {
-			go client.Listen(chain, clients, events, doneClient, lastBlockChan, ks, flags)
+			go client.Listen(chain, clients, events, doneClient, ks, flags, wg)
 		}
 
 		<-doneClient
