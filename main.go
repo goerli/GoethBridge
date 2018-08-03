@@ -113,9 +113,10 @@ func printHeader() {
 }
 
 func main() {
-	printHeader()
-	
+	//printHeader()
+
 	/* flags */
+	headerPtr := flag.Bool("header", true, "a bool representing whether to print out the header or not")
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
 	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
 	configPtr := flag.String("config", "./config.json", "a string of the path to the config file") 
@@ -147,6 +148,9 @@ func main() {
 	}
 
 	flag.Parse()
+	header := *headerPtr
+	if header { printHeader() }
+
 	configStr := *configPtr
 	fmt.Println("config path: ", configStr)
 

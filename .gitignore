@@ -5,6 +5,9 @@
 # build directories
 target/
 
+# block number logs
+log/
+
 node_modules/
 
 compiled_contracts
