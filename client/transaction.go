@@ -115,8 +115,6 @@ func WithdrawTo(chain *Chain, value *big.Int, id string) {
 
 	dataStr := "5fcbc20e000000000000000000000000" + chain.From.Hex()[2:] + padTo32Bytes(id) + padBigTo32Bytes(value)
 
-	//fmt.Println("input data: ", dataStr)
-
 	data, err := hex.DecodeString(dataStr)
 	if err != nil {
 		fmt.Println(err)

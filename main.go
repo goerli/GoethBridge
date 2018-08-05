@@ -26,6 +26,7 @@ import (
     //"github.com/noot/multi_directional_bridge/rlp"
     //"github.com/noot/multi_directional_bridge/transaction"
     "github.com/noot/multi_directional_bridge/client"
+    //"github.com/noot/multi_directional_bridge/function"
 )
 
 /* global vars */
@@ -114,6 +115,11 @@ func printHeader() {
 
 func main() {
 	//printHeader()
+	// var input string
+	// fmt.Println("enter function: ")
+	// fmt.Scanln(&input)
+	// sig := function.GenerateSignature(input)
+	// fmt.Println(sig)
 
 	/* flags */
 	headerPtr := flag.Bool("header", true, "a bool representing whether to print out the header or not")

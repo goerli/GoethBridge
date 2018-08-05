@@ -8,6 +8,9 @@ target/
 # block number logs
 log/
 
+bridge
+multi_directional_bridge
+
 node_modules/
 
 compiled_contracts
