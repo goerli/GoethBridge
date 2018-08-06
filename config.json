@@ -41,10 +41,10 @@
 		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},
 	"31": { // rootstock testnet
-		//"url": "http://127.0.0.1:4444",
-		"url": "https://public-node.testnet.rsk.co",
-		"contractAddr": "0xae936fa2b42d8918b2dad2b17baf42478c9f04c9",
+		"url": "http://127.0.0.1:4444",
+		//"url": "https://public-node.testnet.rsk.co",
+		"contractAddr": "0x00",
 		"gasPrice": "100000000",
-		"from": "0xae936fa2b42d8918b2dad2b17baf42478c9f04c9"
+		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	}
 }

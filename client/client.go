@@ -48,6 +48,13 @@ type Withdrawal struct {
 	FromChain string
 	Data string
 }
+ 
+type Root struct {
+	Hash common.Hash
+	Contract *common.Address
+	Start *big.Int
+	End *big.Int
+}
 
 // events to listen for
 type Events struct {
@@ -369,6 +376,9 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 	fmt.Println("listening at: " + chain.Url)
 
 	fromBlock := chain.StartBlock
+	var blockRoot Root
+	roots := []Root{}
+
 	//lastBlocks[chain.Id] <- fromBlock
 	fmt.Println("starting block at chain", chain.Id, ":", fromBlock)
 	filter := new(ethereum.FilterQuery)
@@ -387,9 +397,11 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 	for t := range ticker.C{
 		if flags["v"] { fmt.Println(t) }
 
-		//lastBlock <- fromBlock
+		blockRoot.Start = fromBlock
 
 		filter.FromBlock = fromBlock
+
+		// if not reading from all contracts, add the bridge contract address to the filter
 		if !flags["a"] {
 			contractArr := make([]common.Address, 1)
 			contractArr = append(contractArr, *chain.Contract)
@@ -407,11 +419,20 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 			}
 			if flags["v"] { fmt.Println("latest block: ", blockNum) }
 			fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
+
+			blockRoot.Hash = getBlockRoot(chain.Url, blockNum)
 		} else if fromBlock != block.Number() {
 			if err != nil { log.Fatal(err) }
 			if flags["v"] { fmt.Println("latest block: ", block.Number()) }
 			fromBlock = block.Number()
+			blockRoot.Hash = block.Root()
 		}
+
+		if flags["v"] { fmt.Println("block root:", blockRoot.Hash.Hex()) }
+
+		blockRoot.Contract = chain.Contract
+		blockRoot.End = fromBlock
+		roots = append(roots, blockRoot)
 
 		<-logsDone
 

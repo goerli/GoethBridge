@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 /***** rpc methods ******/
@@ -164,6 +165,45 @@ func getBlockNumber(url string) (string, error) {
 		return "", nil
 	}
 	return startBlock, nil
+}
+
+// this function gets the current block by calling "eth_getBlockByNumber"
+func getBlockByNumber(url string, number string) (string, error) {
+	client := &http.Client{}
+	var jsonBytes = []byte(`{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["` + number + `",false],"id":1}`)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
+	req.Header.Set("Content-Type", "application/json")
+	blockNumResp, err := client.Do(req)
+	if err != nil {
+       	return "", err
+	}
+	defer blockNumResp.Body.Close()
+
+	// print out response of eth_blockNumber
+	//fmt.Println("response Status:", blockNumResp.Status)
+	//fmt.Println("response Headers:", blockNumResp.Header)
+	blockNumBody, _ := ioutil.ReadAll(blockNumResp.Body)
+	//fmt.Println("responnse Body:", string(blockNumBody))
+
+	// parse json for result
+	res, err := parseJsonForResult(string(blockNumBody))
+	if err != nil {
+		return "", nil
+	}
+	return res, nil
+}
+
+func getBlockRoot(url string, number string) (common.Hash) {
+	jsonRes, err := getBlockByNumber(url, number)
+	if err != nil {
+		fmt.Println(err)
+	}
+	root, err := ParseJsonForEntry(jsonRes, "hash")
+	if err != nil {
+		fmt.Println(err)
+	}
+	rootHash := common.HexToHash(root)
+	return rootHash
 }
 
 func getNonce(address []byte, url string) (string) {

@@ -54,9 +54,9 @@ module.exports = {
       		gasLimit: 67000000
    	},
 	rsk: {
-		host: "localhost",
-		port: 4444,
-		from: "0xae936fa2b42d8918b2dad2b17baf42478c9f04c9",
+		//provider: new HDWalletProvider(secrets.mnemonic, "http://localhost:4444"),
+		provider: new HDWalletProvider(secrets.mnemonic, "https://public-node.testnet.rsk.co"),
+		gas: 1000000,
 		network_id: "*"
 	}
     }

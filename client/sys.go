@@ -10,11 +10,11 @@ import (
 
 func Cleanup(chain *Chain, lastBlock *big.Int, wg *sync.WaitGroup) {
 	f, err := os.Create("log/" + chain.Id.String() + "_lastblock.txt") // creating...
-   	if err != nil {
-        fmt.Printf("error creating file: %v", err)
-        return
-    }
-    defer f.Close()
+	if err != nil {
+	    fmt.Printf("error creating file: %v", err)
+	    return
+	}
+	defer f.Close()
 
 	if lastBlock == nil {
 		log.Fatal("could not find last block for chain", chain.Id)
