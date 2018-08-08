@@ -3,9 +3,7 @@
 this is a go implementation of a generic bridge between blockchains. the bridge will be able to connect any networks using native fuel or any token.
 
 ### todo
-* implement log filtering
-
-* implement posting of transactions
+* implement multi directional deposits/withdrawals
 
 * implement support for non-ethereum based blockchains
 
@@ -32,3 +30,13 @@ go-ethereum
  `-v` verbose output
  
  `--config` specify path to config file
+ 
+ `--keystore` specify path to keystore directory
+ 
+ `--password` specify password to account; this assumes that there's the same account for every chain
+ 
+ `--fund` promt to fund the bridge on specified chains
+ 
+ `--deposit` prompt to make a deposit on specified chains
+
+`-no-listen` do not start client; this would be used for only making contract calls

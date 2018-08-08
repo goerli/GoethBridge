@@ -2,142 +2,43 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	//"math/big"
-	"bytes"
+	//"net/http"
+	"math/big"
 	"io/ioutil"
-	"time"
-	"jsonparser"
-	"encoding/json"
-	//"encoding/hex"
+	//"time"
+	//"encoding/json"
+	"encoding/hex"
+	//"encoding/binary"
 	"path/filepath"
 	"strings"
 	"log"
 	"flag"
 
-	//"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/common"
+	//"github.com/ethereum/go-ethereum/accounts"
+	//"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/accounts/keystore"
     "github.com/ethereum/go-ethereum/accounts/abi"
+
+    //"github.com/noot/multi_directional_bridge/rlp"
+    //"github.com/noot/multi_directional_bridge/transaction"
+    "github.com/noot/multi_directional_bridge/client"
 )
 
-// used for json format a response from an RPC call
-type Resp struct {
-	jsonrpc string
-	id int
-	result string
-}
-
-// used to json format an RPC call
-type Call struct {
-	Jsonrpc string `json:"jsonrpc"`
-	Method string `json:"method"`
-	Params []string `json:"params"`
-	Id int `json:"id"`
-}
-
-// used for getLogs json formatting
-type LogParams struct {
-	FromBlock string `json:"fromBlock"`
-	Address string `json:"address,omitempty"`
-}
-
-// this function makes the rpc call "eth_getLogs" passing in jsonParams as the json formatted
-// parameters to the call
-// json parameters: [optional] fromBlock, toBlock
-func getLogs(url string, jsonParams string, client *http.Client) (*http.Response, error) {
-	jsonStr := `{"jsonrpc":"2.0","method":"eth_getLogs","params":[` + jsonParams + `],"id":74}`
-	jsonBytes := []byte(jsonStr)
-	//fmt.Println(string(jsonBytes))
-
-	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := client.Do(req)
-	if err != nil { return nil, err }
-	return resp, nil
-}
-
-// this function makes the rpc call "eth_getTranscationReceipt" passing in the txHash
-func getTxReceipt(txHash string, url string, client *http.Client) (*http.Response, error) {
-    jsonStr := `{"jsonrpc":"2.0","method":"eth_getTransactionReceipt","params":["` + txHash + `"],"id":74}`
-    jsonBytes := []byte(jsonStr)
-    //fmt.Println(string(jsonBytes))
-
-    req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
-    req.Header.Set("Content-Type", "application/json")
-    resp, err := client.Do(req)
-    if err != nil { return nil, err }
-    return resp, nil
-}
-
-
-// this function parses jsonStr for the result entry and returns its value as a string
-func parseJsonForResult(jsonStr string) (string, error) {
-	jsonBody := []byte(string(jsonStr))
-	res, _, _, err := jsonparser.Get(jsonBody, "result")
-	if err != nil {
-		return "", err
-	}
-	return string(res), nil
-}
-
-// this function parses jsonStr for the entry "get" and returns its value as a string
-func parseJsonForEntry(jsonStr string, get string) (string, error) {
-	jsonBody := []byte(string(jsonStr))
-	res, _, _, err := jsonparser.Get(jsonBody, get)
-	if err != nil {
-		return "", err
-	}
-	return string(res), nil
-}
-
-// this function gets the current block number by calling "eth_blockNumber"
-func getBlockNumber(url string, client *http.Client) (string, error) {
-	var jsonBytes = []byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}`)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
-	req.Header.Set("Content-Type", "application/json")
-	blockNumResp, err := client.Do(req)
-	if err != nil {
-       	return "", err
-	}
-	defer blockNumResp.Body.Close()
-
-	// print out response of eth_blockNumber
-	//fmt.Println("response Status:", blockNumResp.Status)
-	//fmt.Println("response Headers:", blockNumResp.Header)
-	blockNumBody, _ := ioutil.ReadAll(blockNumResp.Body)
-	//fmt.Println("responnse Body:", string(blockNumBody))
-
-	// parse json for result
-	startBlock, err := parseJsonForResult(string(blockNumBody))
-	if err != nil {
-		return "", nil
-	}
-	return startBlock, nil
-}
-
-func readDepositData(data string) (string, string, string) {
-	length := len(data)
-	if length == 194 { // '0x' + 64 + 64 + 64
-		recipient := "0x" + data[26:66]
-		value := data[66:130]
-		toChain :=  "0x" + data[130:194]
-		return recipient, value, toChain
-	} else {
-		return "", "", ""
-	}
-}
-
 /* global vars */
-// flags
-var verbose bool
-var readAll bool
-var chains []string
-var contracts []string
-var chainUrls []string
-// events to listen for
-var DepositId string
-var CreationId string
+var flags map[string]bool
+var ks *keystore.KeyStore
 
-func readAbi() {
+/****** keystore methods ******/
+func newKeyStore(path string) (*keystore.KeyStore) {
+	newKeyStore := keystore.NewKeyStore(path, keystore.StandardScryptN, keystore.StandardScryptP)
+	return newKeyStore
+}
+
+func readAbi() (*client.Events) {
+	e := new(client.Events)
+
 	// read bridge contract abi
 	path, _ := filepath.Abs("./truffle/build/contracts/Bridge.json")
 	file, err := ioutil.ReadFile(path)
@@ -145,7 +46,7 @@ func readAbi() {
 	    fmt.Println("Failed to read file:", err)
 	}
 
-	fileAbi, err := parseJsonForEntry(string(file), "abi")
+	fileAbi, err := client.ParseJsonForEntry(string(file), "abi")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -155,151 +56,89 @@ func readAbi() {
 	    fmt.Println("Invalid abi:", err)
 	}
 
-		// checking abi for events
+	// checking abi for events
 	bridgeEvents := bridgeabi.Events
 	depositEvent := bridgeEvents["Deposit"]
 	depositHash := depositEvent.Id()
-	DepositId = depositHash.Hex()
-	fmt.Println("deposit event id: ", DepositId) // this is the deposit event to watch for
+	e.DepositId = depositHash.Hex()
+	fmt.Println("deposit event id: ", e.DepositId) // this is the deposit event to watch for
 
 	creationEvent := bridgeEvents["ContractCreation"]
 	creationHash := creationEvent.Id()
-	CreationId = creationHash.Hex()
-	fmt.Println("contract creation event id: ", CreationId)
-}
+	e.CreationId = creationHash.Hex()
+	fmt.Println("contract creation event id: ", e.CreationId)
 
-func listen(urls []string, chains []string) {
-	var params LogParams
+	withdrawEvent := bridgeEvents["Withdraw"]
+	withdrawHash := withdrawEvent.Id()
+	e.WithdrawId = withdrawHash.Hex()
+	fmt.Println("withdraw event id: ", e.WithdrawId)
 
-	logsFound := make(map[string]bool)
+	bridgeSetEvent := bridgeEvents["BridgeSet"]
+	bridgeSetHash := bridgeSetEvent.Id()
+	e.BridgeSetId = bridgeSetHash.Hex()
+	fmt.Println("set bridge event id: ", e.BridgeSetId)
 
-	// poll filter every 500ms for changes
-	ticker := time.NewTicker(100 * time.Millisecond)
-	for i, url := range urls {
-		go func(chain string) {
-			client := &http.Client{}
-			fmt.Println("listening at: " + url)
-			for t := range ticker.C{
-				if verbose { fmt.Println(t) }
-
-				if !readAll { 
-					params.Address = contracts[i]
-				} 
-				params.FromBlock, _ = getBlockNumber(url, client)
-				if verbose { fmt.Println("getting logs from block number: " + params.FromBlock + "\n") }
-				jsonParams, _ := json.Marshal(params)
-	            //fmt.Println("jsonParams: " + string(jsonParams))
-
-				//get logs from params.FromBlock
-				resp, _ := getLogs(url, string(jsonParams), client)
-				defer resp.Body.Close()
-
-				//fmt.Println("response Status:", resp.Status)
-				//fmt.Println("response Headers:", resp.Header)
-				body, _ := ioutil.ReadAll(resp.Body)
-				//fmt.Println("response Body:", string(body))
-	 
-				// parse for getLogs result
-				//logsResult := parseJsonForResult(string(body))
-				logsResult, err := parseJsonForEntry(string(body), "result")
-				if err != nil {
-					fmt.Println("could not parse logs")
-					fmt.Println(err)
-				}
-				if verbose { fmt.Println("logsResult: " + logsResult + "\n") }
-				//fmt.Println(len(logsResult))
-
-				// if there are new logs, parse for event info
-				if len(logsResult) > 2 {
-					txHash, _ := parseJsonForEntry(logsResult[1:len(logsResult)-1], "transactionHash")
-					//fmt.Println(txHash + "\n")
-					if logsFound[txHash] != true { 
-						logsFound[txHash] = true
-						fmt.Println("\nnew logs found for chain", chain)
-
-						//logs <- logsResult
-						//readLogs(logs)
-						//go readLogs(logs)
-						//<-exit
-
-						// get logs contract address
-						address, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "address")
-						if err != nil {
-							fmt.Println(err)
-						}
-						// this is not actually a good way to listen for events from a  contract
-						// this could be used to confirm a log, but for listening to events from
-						// one contract, we would specify the address in our call to eth_getLogs
-						fmt.Println("contract addr: ", address)
-						//fmt.Println("length of address: ", len(address))
-						for i := 0; i < len(chains); i++ {
-							if strings.Compare(address[1:41], chains[i]) == 0 {
-								fmt.Println("bridge contract event heard on chain ", chains[i])
-							}
-						}
-
-						// read topics of log
-						topics, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "topics")
-						if err != nil {
-							fmt.Println(err)
-						}
-						fmt.Println("topics: ", topics[2:68])
-						//fmt.Println("length of topics: ", len(topics)-4) len = 66: 0x + 64 hex chars = 32 bytes
-
-						if strings.Compare(topics[2:68],DepositId) == 0 { 
-							fmt.Println("*** deposit event ", topics[2:68])
-							data, err := parseJsonForEntry(logsResult[1:len(logsResult)-1], "data")
-							if err != nil {
-								fmt.Println(nil)
-							}
-							//fmt.Println("length of data: ", len(data))
-							//fmt.Println("data: ", data)
-							receiver, value, toChain := readDepositData(data)
-							fmt.Println("receiver: ", receiver) 
-							fmt.Println("value: ", value) // in hexidecimal
-							fmt.Println("to chain: ", toChain) // in hexidecimal
-					 	} else if strings.Compare(topics[2:68],CreationId) == 0 {
-							fmt.Println("*** bridge contract creation")
-						}
-					}
-				}
-			}
-		}(chains[i])
-	}
-
-	// bridge timeout. eventually, change so it never times out
-	time.Sleep(6000 * time.Second)
-	ticker.Stop()
+	bridgeFundedEvent := bridgeEvents["BridgeFunded"]
+	bridgeFundedHash := bridgeFundedEvent.Id()
+	e.BridgeFundedId = bridgeFundedHash.Hex()
+	fmt.Println("bridge funded event id: ", e.BridgeFundedId)
+	return e
 }
 
 func main() {
 	/* read abi of contract in truffle folder */
-	readAbi()
+	events := readAbi()
 
 	/* flags */
-	// -v
-	// default = false
-	// if verbosity = true, print out waiting for logs
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
-	// would never actually want this, it's just kinda cool
 	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
 	configPtr := flag.String("config", "./config.json", "a string of the path to the config file") 
+	keysPtr := flag.String("keystore", "./keystore", "a string of the path to the keystore directory") 
+	// password flag assumes you have the same account on every chain
+	passwordPtr := flag.String("password", "password", "a string of the password to the account specified in the config file") 
 
+	fundBridgePtr := flag.Bool("fund", false, "a bool; if true, prompt user to fund bridge contract")
+	depositPtr := flag.Bool("deposit", false, "a bool; if true, prompt user to deposit to bridge contract")
+	noListenPtr := flag.Bool("no-listen", false, "a bool; if true, do not start the listener. this would be used to only make deposits or other contract interactions")
+	
 	flag.Parse()
 	configStr := *configPtr
 	fmt.Println("config path: ", configStr)
 
-	verbose = *verbosePtr
+	verbose := *verbosePtr
 	if verbose { fmt.Println("verbose: ", verbose) }
 
-	readAll = *readAllPtr
+	readAll := *readAllPtr
 	if readAll { fmt.Println("read from all contracts? ", readAll)}
 
-	chains = flag.Args()
+	chains := flag.Args()
 	if len(chains) == 0 {
 		chains = append(chains,"33")
 	}
 	fmt.Println("chains to connect to: ", chains)
+
+	keystorePath := *keysPtr
+	fmt.Println("keystore path: ", keystorePath)
+
+	password := *passwordPtr
+
+	fundBridge := *fundBridgePtr
+	deposit := *depositPtr
+	noListen := *noListenPtr
+
+	flags = make(map[string]bool)
+	flags["v"] = verbose
+	flags["a"] = readAll
+	flags["fund"] = fundBridge
+	flags["deposit"] = deposit
+	flags["nolisten"] = noListen
+
+	/* keys */
+	ks = newKeyStore(keystorePath)
+	ksaccounts := ks.Accounts()
+	for i, account := range ksaccounts {
+		if verbose { fmt.Println("account", i, ":", account.Address.Hex()) }
+	}
 
 	// config file reading
 	path, _ := filepath.Abs(configStr)
@@ -308,31 +147,108 @@ func main() {
 		fmt.Println("Failed to read file:", err)	
 	}
 
+	clients := make([]*client.Chain, len(chains))
 	// read config file for each chain id
 	for i, chain := range chains {
-		chainStr, err := parseJsonForEntry(string(file), chain)
+		clients[i] = new(client.Chain)
+
+		clients[i].Id = new(big.Int)
+		clients[i].Id.SetString(chain, 10)
+
+		chainStr, err := client.ParseJsonForEntry(string(file), chain)
 		if err != nil {
 			fmt.Println("could not find chain in config file")
 			log.Fatal(err)
 		}
 
-		contractAddr, err := parseJsonForEntry(chainStr, "contractAddr")
+		contractAddr, err := client.ParseJsonForEntry(chainStr, "contractAddr")
 		if err != nil {
 			fmt.Println("could not find contractAddr in config file")
 			log.Fatal(err)
 		}
-		fmt.Println("contract address of chain", chains[i], ":", contractAddr)
-		contracts = append(contracts, contractAddr)
+		fmt.Println("contract address of chain", chain, ":", contractAddr)
+		contract := new(common.Address)
+		contractBytes, err := hex.DecodeString(contractAddr[2:])
+		if err != nil {
+			log.Fatal(err)
+		}
+		contract.SetBytes(contractBytes)
+		clients[i].Contract = contract
 
-		url, err := parseJsonForEntry(chainStr, "url")
+		url, err := client.ParseJsonForEntry(chainStr, "url")
 		if err != nil {
 			fmt.Println("could not find url in config file")
 			log.Fatal(err)
 		}
 		fmt.Println("url of chain", chain, ":", url)
-		chainUrls = append(chainUrls, url)
+		clients[i].Url = url
+
+		gp, err := client.ParseJsonForEntry(chainStr, "gasPrice")
+		if err != nil {
+			fmt.Println("could not find gas price in config file")
+			log.Fatal(err)
+		}
+		bigGas := new(big.Int)
+		bigGas.SetString(gp, 10)
+		clients[i].GasPrice = bigGas
+
+		fromAccount, err := client.ParseJsonForEntry(chainStr, "from")
+		if err != nil {
+			fmt.Println("could not find from account in config file")
+			log.Fatal(err)
+		}
+		fmt.Println("account to send txs from on chain", chain, ":", fromAccount)
+		from := new(common.Address)
+		fromBytes, err := hex.DecodeString(fromAccount[2:])
+		if err != nil {
+			log.Fatal(err)
+		}
+		from.SetBytes(fromBytes)
+		clients[i].From = from
+
+		clients[i].Password = password
+
+		/* unlock account */
+		// if(ks.HasAddress(*from)) {
+		// 	account := new(accounts.Account)
+		// 	account.Address = *from
+		// 	err = ks.Unlock(*account, password)
+		// 	if err != nil {
+		// 		fmt.Println("could not unlock account")
+		// 		fmt.Println(err)
+		// 	} else {
+		// 		log.Fatal("account not found in keystore")
+		// 	}
+		// }
 	}
 
-	fmt.Println("\nlistening for events...")
-	listen(chainUrls, chains)
+	for _, chain := range clients {
+		/* dial client */
+		chainClient, err := ethclient.Dial(chain.Url)
+		if err != nil {
+			log.Fatal(err)
+		}
+		chain.Client = chainClient
+	}
+
+	/* channels */
+	doneClient := make(chan bool)
+	donePrompt := make(chan bool)
+
+	/* prompt, if flags set */
+	for _, chain := range clients {
+		/* prompt if flags set & listen */
+		go client.Prompt(chain, ks, flags, donePrompt)
+		<-donePrompt
+	}
+
+	if(!noListen) {
+		/* listener */
+		fmt.Println("\nlistening for events...")
+		for _, chain := range clients {
+			go client.Listen(chain, clients, events, doneClient, ks, flags)
+		}
+
+		<-doneClient
+	}
 }
