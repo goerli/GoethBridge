@@ -30,7 +30,7 @@
 	},
 	"1337": { // geth local chain
 		"url": "http://127.0.0.1:8545",
-		"contractAddr": "0x7f69dff8a1ae5b2958d97fdefbc600af8c9a0623",
+		"contractAddr": "0x0b197606442affae8402f9030edbe9234c2069fe",
 		"gasPrice": "10000000",
 		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},

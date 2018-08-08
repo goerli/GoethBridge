@@ -18,15 +18,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/common"
-	//"github.com/ethereum/go-ethereum/accounts"
-	//"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
     "github.com/ethereum/go-ethereum/accounts/abi"
 
-    //"github.com/noot/multi_directional_bridge/rlp"
-    //"github.com/noot/multi_directional_bridge/transaction"
-    "github.com/noot/multi_directional_bridge/client"
-    //"github.com/noot/multi_directional_bridge/function"
+    "github.com/ChainSafeSystems/multi_directional_bridge/client"
 )
 
 /* global vars */

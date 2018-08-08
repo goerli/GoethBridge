@@ -8,7 +8,7 @@ import (
 	//"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/common"
+	//"github.com/ethereum/go-ethereum/common"
 )
 
 /****** functions to send transactions ******/
@@ -205,19 +205,7 @@ func FundBridge(chain *Chain, value *big.Int) {
 	}
 }
 
-/*** bridge header root relayer functions ***/
-func AddRootParamsToMsg(root *common.Hash, contractAddr *common.Address, start *big.Int, end *big.Int) ([]byte) {
-	rootBytes := root.Bytes()
-	contractAddrBytes := contractAddr.Bytes()
-	startBytes := start.Bytes()
-	endBytes := end.Bytes()
-	msg := []byte{}
-	msg = append(msg, rootBytes...)
-	msg = append(msg, contractAddrBytes...)
-	msg = append(msg, startBytes...)
-	msg = append(msg, endBytes...)
-	return msg
-}
+/*** root relayer functions ***/
 
 func SignMessage(chain *Chain, msg []byte) ([]byte, error) {
 	//client := chain.Client
@@ -228,38 +216,4 @@ func SignMessage(chain *Chain, msg []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	} else { return msg, nil }
-}
-
-func AddRoot(chain *Chain, root *common.Hash, contractAddr *common.Address, start *big.Int, end *big.Int, sig []byte) {
-	client := chain.Client
-	from := new(accounts.Account)
-	from.Address = *chain.From
-	fmt.Println()
-
-	dataStr := "dbebb6c5000000000000000000000000" + padTo32Bytes(root.Hex()[2:]) + padTo32Bytes(contractAddr.Hex()[2:]) + padIntTo32Bytes(int64(len(sig)))
-
-	data, err := hex.DecodeString(dataStr)
-	if err != nil {
-		fmt.Println(err)
-	} 
-
-	data = append(data, sig...)
-	nonce, err := client.PendingNonceAt(context.Background(), *chain.From)
-	chain.Nonce = nonce
-
-	tx := types.NewTransaction(chain.Nonce, *chain.Contract, big.NewInt(0), uint64(4600000), chain.GasPrice, data)
-	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
-	if err != nil {
-		fmt.Println("could not sign tx")
-		fmt.Println(err)
-	}
-
-	txHash := txSigned.Hash()
-	fmt.Println("attempting to send tx", txHash.Hex(), "to deposit on chain", chain.Id)
-
-	err = client.SendTransaction(context.Background(), txSigned)
-	if err != nil {
-		fmt.Println("could not send tx")
-		fmt.Println(err)
-	}
 }

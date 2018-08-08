@@ -48,13 +48,6 @@ type Withdrawal struct {
 	FromChain string
 	Data string
 }
- 
-type Root struct {
-	Hash common.Hash
-	Contract *common.Address
-	Start *big.Int
-	End *big.Int
-}
 
 // events to listen for
 type Events struct {

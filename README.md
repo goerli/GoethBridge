@@ -11,6 +11,11 @@ go 1.9.1
 go-ethereum
 `go get github.com/ethereum/go-ethereum`
 
+jsonparser
+
+in $GOPATH/src
+`git clone https://github.com/buger/jsonparser`
+
 # to run
 `go run main.go 1 3 42`
   
@@ -32,3 +37,5 @@ go-ethereum
  `--password` password string to account 0
  
  `--config` specify path to config file
+
+ `--keystore` specify path to keystore file
