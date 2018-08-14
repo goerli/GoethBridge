@@ -52,6 +52,12 @@ module.exports = {
       		network_id: 1,
       		gas: 1000000,
       		gasLimit: 67000000
-   	}  
+   	},
+	rsk: {
+		//provider: new HDWalletProvider(secrets.mnemonic, "http://localhost:4444"),
+		provider: new HDWalletProvider(secrets.mnemonic, "https://public-node.testnet.rsk.co"),
+		gas: 1000000,
+		network_id: "*"
+	}
     }
 };

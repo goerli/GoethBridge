@@ -1,12 +1,1 @@
-# IDE stuff
-.idea/
-.vscode/
-
-# build directories
-target/
-
-node_modules/
-
-compiled_contracts
-
-
+truffle/node_modules

@@ -8,7 +8,7 @@ import (
 	//"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/core/types"
-	//"github.com/ethereum/go-ethereum/ethclient"
+	//"github.com/ethereum/go-ethereum/common"
 )
 
 /****** functions to send transactions ******/
@@ -46,6 +46,7 @@ func SetBridge(chain *Chain) () {
 }
 
 // id is the id of the chain to withdraw the deposit on
+// ids are in hexidecimal
 func Deposit(chain *Chain, value *big.Int, id string) {
 	client := chain.Client
 	//accounts := keys.Accounts()
@@ -64,6 +65,65 @@ func Deposit(chain *Chain, value *big.Int, id string) {
 	chain.Nonce = nonce
 
 	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(4600000), chain.GasPrice, data)
+	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
+	if err != nil {
+		fmt.Println("could not sign tx")
+		fmt.Println(err)
+	}
+
+	txHash := txSigned.Hash()
+	fmt.Println("attempting to send tx", txHash.Hex(), "to deposit on chain", chain.Id)
+
+	err = client.SendTransaction(context.Background(), txSigned)
+	if err != nil {
+		fmt.Println("could not send tx")
+		fmt.Println(err)
+	}
+}
+
+func PayBridge(chain *Chain, value *big.Int) {
+	client := chain.Client
+	from := new(accounts.Account)
+	from.Address = *chain.From
+	fmt.Println()
+
+	nonce, err := client.PendingNonceAt(context.Background(), *chain.From)
+	chain.Nonce = nonce
+
+	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(4600000), chain.GasPrice, []byte{})
+	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
+	if err != nil {
+		fmt.Println("could not sign tx")
+		fmt.Println(err)
+	}
+
+	txHash := txSigned.Hash()
+	fmt.Println("attempting to send tx", txHash.Hex(), "to deposit on chain", chain.Id)
+
+	err = client.SendTransaction(context.Background(), txSigned)
+	if err != nil {
+		fmt.Println("could not send tx")
+		fmt.Println(err)
+	}
+}
+// ids are in hexidecimal
+func WithdrawTo(chain *Chain, value *big.Int, id string) {
+	client := chain.Client
+	from := new(accounts.Account)
+	from.Address = *chain.From
+	fmt.Println()
+
+	dataStr := "5fcbc20e000000000000000000000000" + chain.From.Hex()[2:] + padTo32Bytes(id) + padBigTo32Bytes(value)
+
+	data, err := hex.DecodeString(dataStr)
+	if err != nil {
+		fmt.Println(err)
+	} 
+
+	nonce, err := client.PendingNonceAt(context.Background(), *chain.From)
+	chain.Nonce = nonce
+
+	tx := types.NewTransaction(chain.Nonce, *chain.Contract, big.NewInt(0), uint64(4600000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
 		fmt.Println("could not sign tx")
@@ -143,4 +203,17 @@ func FundBridge(chain *Chain, value *big.Int) {
 		fmt.Println("could not send tx")
 		fmt.Println(err)
 	}
+}
+
+/*** root relayer functions ***/
+
+func SignMessage(chain *Chain, msg []byte) ([]byte, error) {
+	//client := chain.Client
+	from := new(accounts.Account)
+	from.Address = *chain.From
+	//fmt.Println()
+	msg, err := keys.SignHashWithPassphrase(*from, chain.Password, msg)
+	if err != nil {
+		return nil, err
+	} else { return msg, nil }
 }

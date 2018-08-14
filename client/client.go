@@ -10,8 +10,10 @@ import (
 	"context"
 	"log"
 	"strings"
-	//"sync"
-	//"path/filepath"
+	"os"
+	"os/signal"
+	"syscall"
+	"sync"
 
 	//"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -37,6 +39,7 @@ type Chain struct {
 	Password string
 	Client *ethclient.Client
 	Nonce uint64
+	StartBlock *big.Int
 }
 
 type Withdrawal struct {
@@ -53,6 +56,7 @@ type Events struct {
  	WithdrawId string
 	BridgeSetId string
 	BridgeFundedId string
+	PaidId string
 }
 
 /****** helpers ********/
@@ -68,6 +72,17 @@ func padTo32Bytes(s string) (string) {
 			l += 1
 		}
 	}
+}
+
+func padBigTo32Bytes(n *big.Int) (string) {
+	nBytes := n.Bytes()
+	nHexStr := hex.EncodeToString(nBytes)
+	return padTo32Bytes(nHexStr)
+}
+
+func padIntTo32Bytes(n int64) (string) {
+	nBig := new(big.Int).SetInt64(n)
+	return padBigTo32Bytes(nBig)
 }
 
 // set w.Data
@@ -148,6 +163,9 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 				} else if strings.Compare(topic, events.BridgeFundedId) == 0 {
 					fmt.Println("*** funded bridge event")
 					fmt.Println("txHash: ", txHash)
+				} else if strings.Compare(topic, events.PaidId) == 0 {
+					fmt.Println("*** bridge paid event")
+					fmt.Println("txHash: ", txHash)
 				}
 			}
 			logsRead[txHash] = true
@@ -156,25 +174,27 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 	logsDone <- true
 }
 
+func waitOnPending(chain *Chain, txHash common.Hash) (*types.Transaction) {
+	for {
+		tx, isPending, err := chain.Client.TransactionByHash(context.Background(), txHash)
+		if err != nil {
+			fmt.Println(err)
+		}
+		if !isPending { return tx }
+	}
+}
+
 func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdrawDone chan bool) {
-	tx, isPending, err := chain.Client.TransactionByHash(context.Background(), txHash)
-	if isPending {
-		// wait
-	}
-	if err != nil {
-		fmt.Println(err)
-	}
+	tx := waitOnPending(chain, txHash)
 
 	withdrawal := new(Withdrawal)
-
 	data := hex.EncodeToString(tx.Data())
-	//fmt.Println("data: ", data)
-	//fmt.Println(len(data))
+
 	if len(data) > 72 {
 		receiver := data[32:72];
 		toChain := data[72:136]
 		value := tx.Value()
-		// receiver, value, toChain := readDepositData(data)
+
 		fmt.Println("receiver: ", receiver) 
 		fmt.Println("value: ", value) // in hexidecimal
 		fmt.Println("to chain: ", toChain) // in hexidecimal
@@ -186,14 +206,8 @@ func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdra
 		fromChain := new(big.Int)
 		fromChain.SetString(toChain, 16)
 		fmt.Println("chain to withdraw to: ", fromChain)
-		//fmt.Println(fromChain)
-		//chainIndex := IdsToChainIndex[fromChain]
-		//fmt.Println("chain to withdraw to: ", allChains[fromChain])
-		// idx := findChainIndex(chain.Id, allChains)
-		// fmt.Println("deposit chain id: ", chain.Id, allChains[idx])
 
 		idx := findChainIndex(fromChain, allChains)
-		//fmt.Println("withdraw chain id: ", fromChain, allChains[idx])
 
 		if idx == -1 {
 			fmt.Println("could not find chain to withdraw to")
@@ -204,10 +218,13 @@ func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdra
 	withdrawDone <- true
 }
 
-func FundPrompt(chain *Chain) {
+func FundPrompt(chain *Chain, ks *keystore.KeyStore) {
+	keys = ks
+
 	var value int64
 	var confirm int64
 	fmt.Println("\nfunding the bridge contract on chain", chain.Id)
+	fmt.Println("note that funding of the bridge cannot be withdrawn")
 	fmt.Println("enter value of funding, in wei")
 	fmt.Scanln(&value)
 	if value == -1 { 
@@ -222,7 +239,9 @@ func FundPrompt(chain *Chain) {
 	FundBridge(chain, valBig)
 }
 
-func DepositPrompt(chain *Chain) {
+func DepositPrompt(chain *Chain, ks *keystore.KeyStore) {
+	keys = ks
+
 	var value int64
 	var to int64
 	var confirm int64
@@ -251,26 +270,89 @@ func DepositPrompt(chain *Chain) {
 	Deposit(chain, valBig, toHex)
 }
 
-func Prompt(chain *Chain, ks *keystore.KeyStore, fl map[string]bool, donePrompt chan bool) {
+func WithdrawToPrompt(chain *Chain, ks *keystore.KeyStore) {
 	keys = ks
-	flags = fl
 
-	/* prompt for fund bridge info */
-	if flags["fund"] {
-		FundPrompt(chain)
+	var value int64
+	var to int64
+	var confirm int64
+	fmt.Println("\nwithdrawing to other chains from the bridge contract on chain", chain.Id)
+	fmt.Println("type -1 to escape")
+	fmt.Println("enter value of withdraw, in wei")
+	fmt.Scanln(&value)
+	if value == -1 { 
+		return
+	}
+	fmt.Println("enter chain id to withdraw on")
+	fmt.Scanln(&to)
+	if to == -1 { 
+		return
 	}
 
-	/* prompt for deposit info */
-	if flags["deposit"] {
-		DepositPrompt(chain)
+	fmt.Println("confirm deposit on chain", chain.Id, "with value", value, "wei, withdrawing to chain", to)
+	fmt.Scanln(&confirm)
+	if confirm == -1 { 
+		return
 	}
 
-	//donePrompt.Done()
-	donePrompt <- true
+	valBig := big.NewInt(value)
+	toHex := fmt.Sprintf("%x", to)
+	WithdrawTo(chain, valBig, toHex)
 }
+
+func PayBridgePrompt(chain *Chain, ks *keystore.KeyStore) {
+	keys = ks
+
+	var value int64
+	var confirm int64
+	fmt.Println("\npaying bridge contract on chain", chain.Id)
+	fmt.Println("note that bridge payments can later be withdrawn")
+	fmt.Println("type -1 to escape")
+	fmt.Println("enter value of payment, in wei")
+	fmt.Scanln(&value)
+	if value == -1 {
+		return
+	}
+
+	fmt.Println("confirm payment to bridge on chain", chain.Id, "with value", value, "wei")
+	fmt.Scanln(&confirm)
+	if confirm == -1 {
+		return
+	}
+
+	valBig := big.NewInt(value)
+	PayBridge(chain, valBig)
+}
+
+// func Prompt(chain *Chain, ks *keystore.KeyStore, fl map[string]bool, donePrompt chan bool) {
+// 	keys = ks
+// 	flags = fl
+
+// 	/* prompt for fund bridge info */
+// 	if flags["fund"] {
+// 		FundPrompt(chain)
+// 	}
+
+// 	// prompt for deposit info 
+// 	if flags["deposit"] {
+// 		DepositPrompt(chain)
+// 	}
+
+// 	if flags["pay"] {
+// 		PayBridgePrompt(chain)
+// 	}
+
+// 	if flags["withdraw"] {
+// 		WithdrawToPrompt(chain)
+// 	}
+
+// 	//donePrompt.Done()
+// 	donePrompt <- true
+// }
+
 // main goroutine
 // starts a client to listen on every chain 
-func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keystore.KeyStore, fl map[string]bool) {
+func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keystore.KeyStore, fl map[string]bool, wg *sync.WaitGroup) {
 	// set up global vars
 	events = e
 	keys = ks
@@ -286,17 +368,43 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 
 	fmt.Println("listening at: " + chain.Url)
 
-	fromBlock := big.NewInt(1)
+	fromBlock := chain.StartBlock
+	var blockRoot Root
+	roots := []Root{}
+
+	//lastBlocks[chain.Id] <- fromBlock
+	fmt.Println("starting block at chain", chain.Id, ":", fromBlock)
 	filter := new(ethereum.FilterQuery)
+
+	c := make(chan os.Signal)
+    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+    go func() {
+        <-c
+        Cleanup(chain, fromBlock, wg)
+        wg.Wait()
+        os.Exit(1)
+    }()
 
 	// every second, check for new logs and update block number
 	ticker := time.NewTicker(1000 * time.Millisecond)
 	for t := range ticker.C{
 		if flags["v"] { fmt.Println(t) }
 
+		blockRoot.Start = fromBlock
+
+		filter.FromBlock = fromBlock
+
+		// if not reading from all contracts, add the bridge contract address to the filter
+		if !flags["a"] {
+			contractArr := make([]common.Address, 1)
+			contractArr = append(contractArr, *chain.Contract)
+			filter.Addresses = contractArr
+		}
+		logsDone := make(chan bool)
+		go Filter(chain, allChains, filter, logsDone)
+
 		block, err := client.BlockByNumber(context.Background(), nil)
 		if err != nil {
-			//log.Fatal(err)
 			//fmt.Println("could not get block with ethclient.. trying http request")
 			blockNum, err := getBlockNumber(chain.Url)
 			if err != nil {
@@ -305,26 +413,26 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 			if flags["v"] { fmt.Println("latest block: ", blockNum) }
 			fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
 
-			//fmt.Println("fromBlock: ", fromBlock)
+			blockRoot.Hash = getBlockRoot(chain.Url, blockNum)
 		} else if fromBlock != block.Number() {
 			if err != nil { log.Fatal(err) }
 			if flags["v"] { fmt.Println("latest block: ", block.Number()) }
 			fromBlock = block.Number()
+			blockRoot.Hash = block.Root()
 		}
 
-		filter.FromBlock = fromBlock
-		if !flags["a"] {
-			contractArr := make([]common.Address, 1)
-			contractArr = append(contractArr, *chain.Contract)
-			filter.Addresses = contractArr
-		}
-		logsDone := make(chan bool)
-		go Filter(chain, allChains, filter, logsDone)
+		if flags["v"] { fmt.Println("block root:", blockRoot.Hash.Hex()) }
+
+		blockRoot.Contract = chain.Contract
+		blockRoot.End = fromBlock
+		roots = append(roots, blockRoot)
+
 		<-logsDone
+
+		//lastBlock <- fromBlock
 	}
  
-	// bridge timeout. eventually, change so it never times out
-	time.Sleep(6000 * time.Second)
-	ticker.Stop()
+ 	//time.Sleep(6000 * time.Second)
+	//ticker.Stop()
 	doneClient <- true
 }
