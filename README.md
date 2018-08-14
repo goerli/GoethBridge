@@ -37,20 +37,16 @@ in $GOPATH/src
 * 31: rootstock testnet
   
   additional flags:
- `go run main.go -a 1 3 42`
+ `go run main.go -a 3 42`
  
- `go run main.go --config ./config.json 1 3 42`
- 
- `go run main.go --password pswd 1 33`
+ `go run main.go --config ./config.json 3 42`
  
  `-a` read logs from every contract on the network (not really useful, mostly for testing)
  
  `-v` verbose output
  
- `--password` password string to account 0
- 
  `--config` specify path to config file
-
+ 
  `--keystore` specify path to keystore file
 
 # interacting with the contract
@@ -64,3 +60,7 @@ for all the following, you should have another terminal open running the bridge 
 `go run main.go pay CHAINID` pay the bridge contract for a later withdraw on the specified chain
 
 `go run main.go withdraw CHAINID` this will withdraw ether that was paid to the bridge contract previously 
+ 
+ `--keystore` specify path to keystore directory
+ 
+ `--password` specify password to account; this assumes that there's the same account for every chain
