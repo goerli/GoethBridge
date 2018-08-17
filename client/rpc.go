@@ -157,7 +157,7 @@ func getBlockNumber(url string) (string, error) {
 	//fmt.Println("response Status:", blockNumResp.Status)
 	//fmt.Println("response Headers:", blockNumResp.Header)
 	blockNumBody, _ := ioutil.ReadAll(blockNumResp.Body)
-	//fmt.Println("responnse Body:", string(blockNumBody))
+	//fmt.Println("response Body:", string(blockNumBody))
 
 	// parse json for result
 	startBlock, err := parseJsonForResult(string(blockNumBody))
@@ -193,17 +193,17 @@ func getBlockByNumber(url string, number string) (string, error) {
 	return res, nil
 }
 
-func getBlockRoot(url string, number string) (common.Hash) {
+func getBlockRoot(url string, number string) (common.Hash, error) {
 	jsonRes, err := getBlockByNumber(url, number)
 	if err != nil {
-		fmt.Println(err)
+		return *new(common.Hash), err
 	}
 	root, err := ParseJsonForEntry(jsonRes, "hash")
 	if err != nil {
-		fmt.Println(err)
+		return *new(common.Hash), err
 	}
 	rootHash := common.HexToHash(root)
-	return rootHash
+	return rootHash, nil
 }
 
 func getNonce(address []byte, url string) (string) {
