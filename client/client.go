@@ -178,7 +178,7 @@ func waitOnPending(chain *Chain, txHash common.Hash) (*types.Transaction) {
 	for {
 		tx, isPending, err := chain.Client.TransactionByHash(context.Background(), txHash)
 		if err != nil {
-			fmt.Println(err)
+			//fmt.Println(err)
 		}
 		if !isPending { return tx }
 	}
@@ -324,32 +324,6 @@ func PayBridgePrompt(chain *Chain, ks *keystore.KeyStore) {
 	PayBridge(chain, valBig)
 }
 
-// func Prompt(chain *Chain, ks *keystore.KeyStore, fl map[string]bool, donePrompt chan bool) {
-// 	keys = ks
-// 	flags = fl
-
-// 	/* prompt for fund bridge info */
-// 	if flags["fund"] {
-// 		FundPrompt(chain)
-// 	}
-
-// 	// prompt for deposit info 
-// 	if flags["deposit"] {
-// 		DepositPrompt(chain)
-// 	}
-
-// 	if flags["pay"] {
-// 		PayBridgePrompt(chain)
-// 	}
-
-// 	if flags["withdraw"] {
-// 		WithdrawToPrompt(chain)
-// 	}
-
-// 	//donePrompt.Done()
-// 	donePrompt <- true
-// }
-
 // main goroutine
 // starts a client to listen on every chain 
 func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keystore.KeyStore, fl map[string]bool, wg *sync.WaitGroup) {
@@ -386,9 +360,9 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
     }()
 
 	// every second, check for new logs and update block number
-	ticker := time.NewTicker(1000 * time.Millisecond)
-	for t := range ticker.C{
-		if flags["v"] { fmt.Println(t) }
+	//ticker := time.NewTicker(1000 * time.Millisecond)
+	for {
+		//if flags["v"] { fmt.Println(t) }
 
 		blockRoot.Start = fromBlock
 
@@ -429,7 +403,7 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 
 		<-logsDone
 
-		//lastBlock <- fromBlock
+		time.Sleep(1 * time.Second)
 	}
  
  	//time.Sleep(6000 * time.Second)
