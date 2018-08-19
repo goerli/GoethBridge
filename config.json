@@ -16,6 +16,12 @@
 		"gasPrice": "10000000",
 		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},
+	"2": { // this doesn't work. find a public etc testnet node?
+		"url": "https://mew.epool.io/",
+		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+		"gasPrice": "10000000",
+		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
+	},
 	"3": {
 		"url": "https://ropsten.infura.io",
 		"contractAddr": "0x7b036c55ac25ca3a91f324d1c19158eac7e4e6e8",

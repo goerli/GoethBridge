@@ -53,6 +53,11 @@ module.exports = {
       		gas: 1000000,
       		gasLimit: 67000000
    	},
+	morden: {
+		provider: new HDWalletProvider(secrets.mnemonic, "https://mew.epool.io/"),
+		network_id: "*",
+		gas: 1000000
+	},
 	rsk: {
 		//provider: new HDWalletProvider(secrets.mnemonic, "http://localhost:4444"),
 		provider: new HDWalletProvider(secrets.mnemonic, "https://public-node.testnet.rsk.co"),
