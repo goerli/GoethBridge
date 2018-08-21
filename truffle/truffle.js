@@ -16,53 +16,53 @@ var HDWalletProvider = require("truffle-hdwallet-provider");
 
 module.exports = {
     networks: {
-	testnet: {
-		host: "localhost",
-		port: 8545,
-		network_id: "*",
-		gasLimit: 4700000
-	},
-	testnet2: {
-		host: "localhost",
-		port: 8546,
-		network_id: "*",
-		gasLimit: 4700000
-	},
-   	ropsten: {
-      		provider: new HDWalletProvider(secrets.mnemonic, "https://ropsten.infura.io/"),
-      		network_id: "*",
-      		gas: 1000000,
-      		gasLimit: 67000000
-      		//gasPrice: web3.utils.toWei("20", "gwei") 
-   	},
-	rinkeby: {
-                provider: new HDWalletProvider(secrets.mnemonic, "https://rinkeby.infura.io/gpcq2PXJhM3TALrZmuhX"),
-                network_id: "*",
-                gas: 1000000,
-                gasLimit: 67000000
-        },
-        kovan: {
-                provider: new HDWalletProvider(secrets.mnemonic, "https://kovan.infura.io/gpcq2PXJhM3TALrZmuhX"),
-                network_id: "*",
-                gas: 1000000,
-                gasLimit: 67000000
-        },
-   	mainnet: {
-      		provider: new HDWalletProvider(secrets.mnemonic, "https://mainnet.infura.io/gpcq2PXJhM3TALrZmuhX"),
-      		network_id: 1,
-      		gas: 1000000,
-      		gasLimit: 67000000
-   	},
-	morden: {
-		provider: new HDWalletProvider(secrets.mnemonic, "https://mew.epool.io/"),
-		network_id: "*",
-		gas: 1000000
-	},
-	rsk: {
-		//provider: new HDWalletProvider(secrets.mnemonic, "http://localhost:4444"),
-		provider: new HDWalletProvider(secrets.mnemonic, "https://public-node.testnet.rsk.co"),
-		gas: 1000000,
-		network_id: "*"
-	}
+    	testnet: {
+        		host: "localhost",
+        		port: 8545,
+        		network_id: "*",
+        		gasLimit: 4700000
+    	},
+    	testnet2: {
+        		host: "localhost",
+        		port: 8546,
+        		network_id: "*",
+        		gasLimit: 4700000
+    	},
+     	ropsten: {
+        		provider: new HDWalletProvider(secrets.mnemonic, "https://ropsten.infura.io/"),
+        		network_id: "*",
+        		gas: 1000000,
+        		gasLimit: 67000000
+        		//gasPrice: web3.utils.toWei("20", "gwei") 
+     	},
+  	 rinkeby: {
+            provider: new HDWalletProvider(secrets.mnemonic, "https://rinkeby.infura.io/gpcq2PXJhM3TALrZmuhX"),
+            network_id: "*",
+            gas: 1000000,
+            gasLimit: 67000000
+      },
+      kovan: {
+            provider: new HDWalletProvider(secrets.mnemonic, "https://kovan.infura.io/gpcq2PXJhM3TALrZmuhX"),
+            network_id: "*",
+            gas: 1000000,
+            gasLimit: 67000000
+      },
+     	mainnet: {
+        		provider: new HDWalletProvider(secrets.mnemonic, "https://mainnet.infura.io/gpcq2PXJhM3TALrZmuhX"),
+        		network_id: 1,
+        		gas: 1000000,
+        		gasLimit: 67000000
+     	},
+    	classic: {
+        		provider: new HDWalletProvider(secrets.mnemonic, "https://mew.epool.io/"),
+        		network_id: "*",
+        		gas: 1000000
+    	},
+    	rsk: {
+        		//provider: new HDWalletProvider(secrets.mnemonic, "http://localhost:4444"),
+        		provider: new HDWalletProvider(secrets.mnemonic, "https://public-node.testnet.rsk.co"),
+        		gas: 1000000,
+        		network_id: "*"
+    	}
     }
 };
