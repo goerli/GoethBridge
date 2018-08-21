@@ -379,17 +379,17 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 			//fmt.Println("could not get block with ethclient.. trying http request")
 			blockNum, err := getBlockNumber(chain.Url)
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println(err)
 			}
 			if flags["v"] { fmt.Println("latest block at chain", chain.Id, ":", blockNum) }
 			fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
 
 			blockRoot.Hash, err = getBlockRoot(chain.Url, blockNum)
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println(err)
 			}
 		} else if fromBlock != block.Number() {
-			if err != nil { log.Fatal(err) }
+			if err != nil { fmt.Println(err) }
 			if flags["v"] { fmt.Println("latest block at chain", chain.Id, ":", block.Number()) }
 			fromBlock = block.Number()
 			blockRoot.Hash = block.Root()
