@@ -10,8 +10,20 @@
 
 
 {
+	"0": {
+		"url": "https://mew.epool.io",
+		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+		"gasPrice": "10000000",
+		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"	
+	},
 	"1": {
 		"url": "https://mainnet.infura.io",
+		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+		"gasPrice": "10000000",
+		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
+	},
+	"2": {
+		"url": "https://testnet.epool.io/",
 		"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
 		"gasPrice": "10000000",
 		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
@@ -24,7 +36,8 @@
 	},
 	"4": {
 		"url": "https://rinkeby.infura.io",
-		"contractAddr": "0x9462c0c7b13111fc8608b8eaf92d69b36ed6b578",
+		//"contractAddr": "0x9462c0c7b13111fc8608b8eaf92d69b36ed6b578",
+		"contractAddr": "0x648355eaec41e363638c6cc49eea015e2819e2c6",
 		"gasPrice": "10000000",
 		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},

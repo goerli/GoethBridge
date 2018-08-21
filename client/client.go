@@ -176,10 +176,7 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 
 func waitOnPending(chain *Chain, txHash common.Hash) (*types.Transaction) {
 	for {
-		tx, isPending, err := chain.Client.TransactionByHash(context.Background(), txHash)
-		if err != nil {
-			fmt.Println(err)
-		}
+		tx, isPending, _ := chain.Client.TransactionByHash(context.Background(), txHash)
 		if !isPending { return tx }
 	}
 }
@@ -324,32 +321,6 @@ func PayBridgePrompt(chain *Chain, ks *keystore.KeyStore) {
 	PayBridge(chain, valBig)
 }
 
-// func Prompt(chain *Chain, ks *keystore.KeyStore, fl map[string]bool, donePrompt chan bool) {
-// 	keys = ks
-// 	flags = fl
-
-// 	/* prompt for fund bridge info */
-// 	if flags["fund"] {
-// 		FundPrompt(chain)
-// 	}
-
-// 	// prompt for deposit info 
-// 	if flags["deposit"] {
-// 		DepositPrompt(chain)
-// 	}
-
-// 	if flags["pay"] {
-// 		PayBridgePrompt(chain)
-// 	}
-
-// 	if flags["withdraw"] {
-// 		WithdrawToPrompt(chain)
-// 	}
-
-// 	//donePrompt.Done()
-// 	donePrompt <- true
-// }
-
 // main goroutine
 // starts a client to listen on every chain 
 func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keystore.KeyStore, fl map[string]bool, wg *sync.WaitGroup) {
@@ -386,9 +357,9 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
     }()
 
 	// every second, check for new logs and update block number
-	ticker := time.NewTicker(1000 * time.Millisecond)
-	for t := range ticker.C{
-		if flags["v"] { fmt.Println(t) }
+	//ticker := time.NewTicker(1000 * time.Millisecond)
+	for {
+		//if flags["v"] { fmt.Println(t) }
 
 		blockRoot.Start = fromBlock
 
@@ -408,15 +379,18 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 			//fmt.Println("could not get block with ethclient.. trying http request")
 			blockNum, err := getBlockNumber(chain.Url)
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println("getBlockNumber error:", err)
 			}
-			if flags["v"] { fmt.Println("latest block: ", blockNum) }
+			if flags["v"] { fmt.Println("latest block at chain", chain.Id, ":", blockNum) }
 			fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
 
-			blockRoot.Hash = getBlockRoot(chain.Url, blockNum)
+			blockRoot.Hash, err = getBlockRoot(chain.Url, blockNum)
+			if err != nil {
+			//	fmt.Println("getBlockRoot error:", err)
+			}
 		} else if fromBlock != block.Number() {
-			if err != nil { log.Fatal(err) }
-			if flags["v"] { fmt.Println("latest block: ", block.Number()) }
+			if err != nil { fmt.Println(err) }
+			if flags["v"] { fmt.Println("latest block at chain", chain.Id, ":", block.Number()) }
 			fromBlock = block.Number()
 			blockRoot.Hash = block.Root()
 		}
@@ -429,7 +403,7 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 
 		<-logsDone
 
-		//lastBlock <- fromBlock
+		time.Sleep(1 * time.Second)
 	}
  
  	//time.Sleep(6000 * time.Second)
