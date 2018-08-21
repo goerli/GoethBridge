@@ -28,10 +28,7 @@ contract Bridge {
 	event Paid(address _addr, uint _value);
 
 	event Deposit(address _recipient, uint _value, uint _toChain); 
-	event DepositErc20(address _recipient, uint _value); 
-
 	event Withdraw(address _recipient, uint _value, uint _fromChain); 
-	event WithdrawErc20(address _recipient, uint _value); 
 
 	constructor() public {
 		owner = msg.sender;
@@ -71,11 +68,6 @@ contract Bridge {
 		emit Deposit(_recipient, _value, _toChain);
 	}
 
-	function tokenFallback(address _sender, address _origin, uint _value, bytes _data) public returns (bool ok) {
-		emit DepositErc20(_origin, _value);
-		return true;
-	}
-
 	function setBridge(address _addr) public onlyOwner {
 		bridge = _addr;
 		emit BridgeSet(bridge);
@@ -84,24 +76,5 @@ contract Bridge {
 	function withdraw(address _recipient, uint _value, uint _fromChain) public onlyBridge {
 		_recipient.transfer(_value);
 		emit Withdraw(_recipient, _value, _fromChain);
-	}
-
-	function withdrawErc20(address _recipient, uint _value) public onlyBridge {
-		emit WithdrawErc20(_recipient, _value);
-		transfer(_recipient, _value);
-	}
-
-	/* erc20 functions */
-	mapping(address => uint) tokenBalance;
-	uint totalSupply;
-
-	event Transfer(address _to, uint _value);
-
-	function transfer(address _to, uint _value) public returns (bool) {
-		require(tokenBalance[msg.sender] >= _value);
-		tokenBalance[msg.sender] -= _value;
-		tokenBalance[_to] += _value;
-		emit Transfer(_to, _value);
-		return true;
 	}
 }
