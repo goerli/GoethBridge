@@ -16,11 +16,17 @@ contract BridgeableToken is StandardToken {
 	address owner;
 	address bridge;
 
+	string public constant name = "Bridgeable Token";
+    string public constant symbol = "BETH";
+    uint8 public constant decimals = 18; 
+
 	event Deposit(address _recipient, uint _value, uint _toChain); 
 	event Withdraw(address _recipient, uint _value, uint _fromChain); 
 
 	constructor() {
 		owner = msg.sender;
+		uint256 initialSupply = 33 ** uint256(decimals);
+		_mint(owner, initialSupply);
 	}
 
 	modifier onlyOwner() {
