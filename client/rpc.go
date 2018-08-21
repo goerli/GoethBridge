@@ -2,7 +2,7 @@ package client
 
 import (
 	"fmt"
-	"jsonparser"
+	"github.com/buger/jsonparser"
 	"net/http"
 	"bytes"
 	"io/ioutil"

@@ -1,10 +1,11 @@
-package: .
+package: projects.go/multi_directional_bridge
 import:
 - package: github.com/ChainSafeSystems/multi_directional_bridge
   subpackages:
   - client
+- package: github.com/buger/jsonparser
 - package: github.com/ethereum/go-ethereum
-  version: ^2.0.0
+  version: ~2.0.0
   subpackages:
   - accounts
   - accounts/abi
@@ -14,4 +15,3 @@ import:
   - crypto
   - ethclient
   - rlp
-- package: jsonparser
