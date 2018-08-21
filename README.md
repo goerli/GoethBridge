@@ -6,15 +6,11 @@ this is a go implementation of a generic bridge between blockchains. the bridge 
 * implement support for non EVM based blockchains
 
 ### requirements
-go 1.9.1
+go 1.10.3
 
-go-ethereum
-`go get github.com/ethereum/go-ethereum`
-
-jsonparser
-
-in $GOPATH/src
-`git clone https://github.com/buger/jsonparser`
+Install the dependencies:
+`glide i`  
+_Make sure you have glide installed in your computer, https://glide.sh_
 
 # to get the bridge
 `go get github.com/ChainSafeSystems/multi_directional_bridge`
