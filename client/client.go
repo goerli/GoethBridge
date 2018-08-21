@@ -176,10 +176,7 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 
 func waitOnPending(chain *Chain, txHash common.Hash) (*types.Transaction) {
 	for {
-		tx, isPending, err := chain.Client.TransactionByHash(context.Background(), txHash)
-		if err != nil {
-			//fmt.Println(err)
-		}
+		tx, isPending, _ := chain.Client.TransactionByHash(context.Background(), txHash)
 		if !isPending { return tx }
 	}
 }
