@@ -17,12 +17,12 @@ in $GOPATH/src
 `git clone https://github.com/buger/jsonparser`
 
 # to get the bridge
-`go get github.com/ChainSafeSystems/multi_directional_bridge`
+`go get github.com/ChainSafeSystems/gobridge`
 
 # to run
 `go run main.go 3 42`
   
-  the arguments after `gr main.go` are the IDs of the networks you want to listen on
+  the arguments after `go run main.go` are the IDs of the networks you want to listen on
   
   the IDs and chain info are in the config.json file
 
