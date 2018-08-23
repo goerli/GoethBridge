@@ -8,16 +8,10 @@ pragma solidity ^0.4.24;
 * on the other chain. when this withdraw is completed, a Withdraw() event will be emitted.
 * 
 * this contract will be deployed on both sides of the bridge.
-*
-* @todo: ERC20/223 support
-* @todo: testing + security; merkle proofs; valiadators ning off on transactions for PoA 
-* chains or private chains/bridges
 */
 
 contract Bridge {
 	address public owner;
-	// this is the public key address of the bridge's own keypair, not
-	// the address of the BridgeSafe or any contract.
 	address public bridge;
 
 	mapping(address => uint) balance;

@@ -25,6 +25,7 @@ contract BridgeableToken is StandardToken {
 
 	constructor() {
 		owner = msg.sender;
+		bridge = msg.sender;
 		uint256 initialSupply = 33 ** uint256(decimals);
 		_mint(owner, initialSupply);
 	}

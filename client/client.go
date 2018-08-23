@@ -27,7 +27,6 @@ import (
 var events *Events // events to listen for
 var keys *keystore.KeyStore // keystore; used to sign txs
 var flags map[string]bool // command line flags
-//var allChains []*Chain //[]*Chain
 var logsRead = map[string]bool{}
 
 type Chain struct {
@@ -122,7 +121,6 @@ func Filter(chain *Chain, allChains []*Chain, filter *ethereum.FilterQuery, logs
 	}
 
 	if len(logs) != 0 {
-		//fmt.Println(len(logs))
 		go ReadLogs(chain, allChains, logs, logsDone)
 	}
 
@@ -153,6 +151,7 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 					fmt.Println("*** withdraw event")
 					txHash := log.TxHash.Hex()
 					fmt.Println("txHash: ", txHash)
+					printWithdraw(chain, log.TxHash)
 					// receiver, value, toChain := readDepositData(data)
 					// fmt.Println("receiver: ", receiver) 
 					// fmt.Println("value: ", value) // in hexidecimal
@@ -178,6 +177,21 @@ func waitOnPending(chain *Chain, txHash common.Hash) (*types.Transaction) {
 	for {
 		tx, isPending, _ := chain.Client.TransactionByHash(context.Background(), txHash)
 		if !isPending { return tx }
+	}
+}
+
+func printWithdraw(chain *Chain, txHash common.Hash) {
+	tx := waitOnPending(chain, txHash)
+
+	data := hex.EncodeToString(tx.Data())
+	if len(data) > 136 {
+		receiver := data[32:72];
+		value := data[72:136]
+		fromChain := data[136:200]
+
+		fmt.Println("receiver: ", receiver) 
+		fmt.Println("value: ", value) // in hexidecimal
+		fmt.Println("from chain: ", fromChain) // in hexidecimal
 	}
 }
 
@@ -357,10 +371,7 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
     }()
 
 	// every second, check for new logs and update block number
-	//ticker := time.NewTicker(1000 * time.Millisecond)
 	for {
-		//if flags["v"] { fmt.Println(t) }
-
 		blockRoot.Start = fromBlock
 
 		filter.FromBlock = fromBlock
@@ -376,7 +387,7 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 
 		block, err := client.BlockByNumber(context.Background(), nil)
 		if err != nil {
-			//fmt.Println("could not get block with ethclient.. trying http request")
+			// could not get block with ethclient.. trying http request
 			blockNum, err := getBlockNumber(chain.Url)
 			if err != nil {
 				fmt.Println("getBlockNumber error:", err)
@@ -405,8 +416,5 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 
 		time.Sleep(1 * time.Second)
 	}
- 
- 	//time.Sleep(6000 * time.Second)
-	//ticker.Stop()
-	doneClient <- true
+ 	doneClient <- true
 }
