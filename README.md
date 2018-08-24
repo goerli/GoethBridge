@@ -64,3 +64,16 @@ for all the following, you should have another terminal open running the bridge 
  `--keystore` specify path to keystore directory
  
  `--password` specify password to account; this assumes that there's the same account for every chain
+
+# issues
+
+you may encounter a "Failed to read file" error referencing Bridge.json. If this happens, run the following:
+```
+cd truffle/
+npm install -g truffle
+npm install truffle-hdwallet-provider
+cp secrets-example.json secrets.json
+truffle compile
+```
+
+this sets up needed dependencies for truffle and compiles the contracts.
