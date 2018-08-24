@@ -16,10 +16,10 @@ import (
 	"os"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-    "github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ChainSafeSystems/geth/ethclient"
+	"github.com/ChainSafeSystems/geth/common"
+	"github.com/ChainSafeSystems/geth/accounts/keystore"
+    "github.com/ChainSafeSystems/geth/accounts/abi"
 
     "github.com/ChainSafeSystems/multi_directional_bridge/client"
 )

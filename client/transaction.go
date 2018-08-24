@@ -5,10 +5,10 @@ import (
 	"encoding/hex"
 	"context"
 	"math/big"
-	//"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/core/types"
-	//"github.com/ethereum/go-ethereum/common"
+	//"github.com/ChainSafeSystems/geth/accounts/keystore"
+	"github.com/ChainSafeSystems/geth/accounts"
+	"github.com/ChainSafeSystems/geth/core/types"
+	//"github.com/ChainSafeSystems/geth/common"
 )
 
 /****** functions to send transactions ******/

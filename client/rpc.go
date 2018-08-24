@@ -8,9 +8,9 @@ import (
 	"io/ioutil"
 	"encoding/hex"
 
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ChainSafeSystems/geth/rlp"
+	"github.com/ChainSafeSystems/geth/core/types"
+	"github.com/ChainSafeSystems/geth/common"
 )
 
 /***** rpc methods ******/

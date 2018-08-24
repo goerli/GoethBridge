@@ -3,7 +3,7 @@ package function
 import (
 	"encoding/hex"
 
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ChainSafeSystems/geth/crypto"
 )
 
 func GenerateSignature(sig string) (string) {

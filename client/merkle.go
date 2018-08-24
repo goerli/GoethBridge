@@ -2,7 +2,7 @@ package client
 
 import (
 	"math/big"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ChainSafeSystems/geth/common"
 )
 
 type Root struct {
