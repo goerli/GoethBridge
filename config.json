@@ -30,15 +30,14 @@
 	},
 	"3": {
 		"url": "https://ropsten.infura.io",
-		"contractAddr": "0x7b036c55ac25ca3a91f324d1c19158eac7e4e6e8",
-		"gasPrice": "10000000",
+		"contractAddr": "0x7d67bb33a0219cfa2c545b506e97a55f90c67104",
+		"gasPrice": "100000000",
 		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},
 	"4": {
 		"url": "https://rinkeby.infura.io",
-		//"contractAddr": "0x9462c0c7b13111fc8608b8eaf92d69b36ed6b578",
-		"contractAddr": "0x648355eaec41e363638c6cc49eea015e2819e2c6",
-		"gasPrice": "10000000",
+		"contractAddr": "0x574ab7d775cc3d85c03bc4c7d88143cca91b4934",
+		"gasPrice": "100000000",
 		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},
 	"1337": { // geth local chain
@@ -49,8 +48,8 @@
 	},
 	"42": {
 		"url": "https://kovan.infura.io",
-		"contractAddr": "0xc40784a328bbf731db354dfb8188cf3dd02a446d",
-		"gasPrice": "5000000",
+		"contractAddr": "0x42ad30c467746e5790cc8944f9c6b4098cab85a5",
+		"gasPrice": "100000000",
 		"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},
 	"31": { // rootstock testnet

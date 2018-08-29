@@ -15,6 +15,7 @@ contract Bridge {
 	address public bridge;
 
 	mapping(address => uint) balance;
+	mapping(bytes32 => bool) withdrawSubmitted;
 
 	event ContractCreation(address _owner);
 	event BridgeSet(address _addr);
@@ -67,7 +68,9 @@ contract Bridge {
 		emit BridgeSet(bridge);
 	}
 
-	function withdraw(address _recipient, uint _value, uint _fromChain) public onlyBridge {
+	function withdraw(address _recipient, uint _value, uint _fromChain, bytes32 _txHash) public onlyBridge {
+		require(!withdrawSubmitted[_txHash]);
+		withdrawSubmitted[_txHash] = true;
 		_recipient.transfer(_value);
 		emit Withdraw(_recipient, _value, _fromChain);
 	}
