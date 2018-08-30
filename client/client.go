@@ -45,6 +45,7 @@ type Withdrawal struct {
 	Recipient string
 	Value *big.Int
 	FromChain string
+	TxHash string
 	Data string
 }
 
@@ -92,7 +93,7 @@ func setWithdrawalData(w *Withdrawal) (*Withdrawal) {
 		if len(valueString) != 64 {
 			fmt.Println("value formatted incorrectly")
 		}
-		w.Data = w.Recipient + valueString + w.FromChain
+		w.Data = w.Recipient + valueString + w.FromChain + w.TxHash
 		return w
 }
 
@@ -213,6 +214,7 @@ func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdra
 		withdrawal.Recipient = data[32:72]
 		withdrawal.FromChain = toChain
 		withdrawal.Value = value
+		withdrawal.TxHash = txHash.Hex()[2:]
 
 		fromChain := new(big.Int)
 		fromChain.SetString(toChain, 16)

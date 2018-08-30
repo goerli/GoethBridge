@@ -106,6 +106,7 @@ func PayBridge(chain *Chain, value *big.Int) {
 		fmt.Println(err)
 	}
 }
+
 // ids are in hexidecimal
 func WithdrawTo(chain *Chain, value *big.Int, id string) {
 	client := chain.Client
@@ -148,7 +149,8 @@ func Withdraw(chain *Chain, withdrawal *Withdrawal) {
 	fmt.Println()
 
 	withdrawal = setWithdrawalData(withdrawal)
-	dataStr := "b5c5f672000000000000000000000000" + withdrawal.Data // withdraw function signature + contract addr
+	dataStr := "4250a6f3000000000000000000000000" + withdrawal.Data // withdraw function signature + contract addr
+
 	data, err := hex.DecodeString(dataStr)
 	if err != nil {
 		fmt.Println(err)

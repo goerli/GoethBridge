@@ -132,7 +132,6 @@ func main() {
 	withdrawCommand := flag.NewFlagSet("withrawCommand", flag.ExitOnError)
 
 	// subcommands
-	// ./b
 	if len(os.Args) > 1 {
 		switch os.Args[1]{
 			case "deposit":
