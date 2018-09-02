@@ -21,7 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
     "github.com/ethereum/go-ethereum/accounts/abi"
 
-    "github.com/ChainSafeSystems/gobridge/client"
+    "github.com/ChainSafeSystems/ChainBridge/client"
 )
 
 /* global vars */
