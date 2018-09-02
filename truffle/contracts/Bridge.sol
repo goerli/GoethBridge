@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 /* Bridge Smart Contract 
 * @noot
-* this contract was created to be a generic bridge contract that will emit a Deposit() 
+* this contract is a generic bridge contract that will emit a Deposit() 
 * event upon receiving ether. this Deposit() event will then be picked up by the bridge,
 * which acts as a client. the bridge will then submit a transaction to withdraw ether
 * on the other chain. when this withdraw is completed, a Withdraw() event will be emitted.
@@ -43,7 +43,6 @@ contract Bridge {
 
 	/* bridge functions */
 	function () public payable {
-		//revert();
 		balance[msg.sender] += msg.value;
 		emit Paid(msg.sender, msg.value);
 	}
