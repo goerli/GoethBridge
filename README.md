@@ -17,7 +17,7 @@ in $GOPATH/src
 `git clone https://github.com/buger/jsonparser`
 
 # to get the bridge
-`go get github.com/ChainSafeSystems/gobridge`
+`go get github.com/ChainSafeSystems/chainbridge`
 
 # to run
 `go run main.go 3 42`
