@@ -38,18 +38,13 @@ func readAbi(verbose bool) (*client.Events) {
 	e := new(client.Events)
 
 	// read bridge contract abi
-	path, _ := filepath.Abs("./truffle/build/contracts/Bridge.json")
+	path, _ := filepath.Abs("./leth/build/Bridge.abi")
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
 	    fmt.Println("Failed to read file:", err)
 	}
 
-	fileAbi, err := client.ParseJsonForEntry(string(file), "abi")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	bridgeabi, err := abi.JSON(strings.NewReader(fileAbi))
+	bridgeabi, err := abi.JSON(strings.NewReader(string(file)))
 	if err != nil {
 	    fmt.Println("Invalid abi:", err)
 	}
