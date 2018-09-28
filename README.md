@@ -23,7 +23,11 @@ in $GOPATH/src
 `go get github.com/ChainSafeSystems/gobridge`
 
 # to run
-`go build && go install`
+```
+cd leth && leth compile
+cd ..
+go build && go install
+```
 
 `ChainBridge 3 42`
   
