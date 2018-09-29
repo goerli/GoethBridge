@@ -11,6 +11,9 @@ go 1.9.1
 go-ethereum
 `go get github.com/ethereum/go-ethereum`
 
+leth
+`go get github.com/ChainSafeSystems/leth`
+
 jsonparser
 
 in $GOPATH/src
@@ -20,9 +23,15 @@ in $GOPATH/src
 `go get github.com/ChainSafeSystems/ChainBridge`
 
 # to run
-`go run main.go 3 42`
+```
+cd leth && leth compile
+cd ..
+go build && go install
+```
+
+`ChainBridge 3 42`
   
-  the arguments after `go run main.go` are the IDs of the networks you want to listen on
+  the arguments after `ChainBridge` are the IDs of the networks you want to listen on
   
   the IDs and chain info are in the config.json file
 
@@ -37,9 +46,9 @@ in $GOPATH/src
 * 31: rootstock testnet
   
   additional flags:
- `go run main.go -a 3 42`
+ `ChainBridge -a 3 42`
  
- `go run main.go --config ./config.json 3 42`
+ `ChainBridge --config ./config.json 3 42`
  
  `-a` read logs from every contract on the network (not really useful, mostly for testing)
  
@@ -53,13 +62,13 @@ in $GOPATH/src
 
 for all the following, you should have another terminal open running the bridge listener with `go run main.go CHAINID1 CHAINID2...`
 
-`go run main.go fund CHAINID` this will open up a prompt for you to make a deposit on the specified chain
+`ChainBridge fund CHAINID` this will open up a prompt for you to make a deposit on the specified chain
 
-`go run main.go deposit CHAINID` this will open up a prompt for you to make a deposit on the specified chain id
+`ChainBridge deposit CHAINID` this will open up a prompt for you to make a deposit on the specified chain id
 
-`go run main.go pay CHAINID` pay the bridge contract for a later withdraw on the specified chain
+`ChainBridge pay CHAINID` pay the bridge contract for a later withdraw on the specified chain
 
-`go run main.go withdraw CHAINID` this will withdraw ether that was paid to the bridge contract previously 
+`ChainBridge withdraw CHAINID` this will withdraw ether that was paid to the bridge contract previously 
  
  `--keystore` specify path to keystore directory
  
@@ -67,13 +76,9 @@ for all the following, you should have another terminal open running the bridge 
 
 # issues
 
-you may encounter a "Failed to read file" error referencing Bridge.json. If this happens, run the following:
+you may encounter a "Failed to read file" error referencing Bridge.abi. If this happens, run the following:
 ```
-cd truffle/
-npm install -g truffle
-npm install truffle-hdwallet-provider
-cp secrets-example.json secrets.json
-truffle compile
+cd leth
+leth compile
 ```
 
-this sets up needed dependencies for truffle and compiles the contracts.

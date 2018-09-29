@@ -1,0 +1,13 @@
+{
+	"networks": {
+		"default": {
+			"name": "default",
+			"url": "http://localhost:8545",
+			"from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30",
+			"keystore": "../keystore",
+			"password": "password",
+			"gas": 100000000,
+			"gasPrice": 4700000
+		}
+	}
+}
