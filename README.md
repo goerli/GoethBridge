@@ -24,6 +24,7 @@ in $GOPATH/src
 
 # to run
 ```
+cd $GOPATH/src/github.com/ChainSafeSystems/ChainBridge
 cd leth && leth compile
 cd ..
 go build && go install
@@ -80,5 +81,12 @@ you may encounter a "Failed to read file" error referencing Bridge.abi. If this 
 ```
 cd leth
 leth compile
+```
+
+if for some reason leth isn't working, you can also use solc.
+inside ChainBridge/leth:
+```
+mkdir build
+solc --abi contracts/Bridge.sol -o build
 ```
 
