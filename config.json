@@ -21,14 +21,14 @@
 			"gasPrice": 100000000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 		},
-		"3": {
+		"ropsten": {
 			"id": 3,
 			"url": "https://ropsten.infura.io",
 			"contractAddr": "0x7d67bb33a0219cfa2c545b506e97a55f90c67104",
 			"gasPrice": 100000000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 		},
-		"4": {
+		"rinkeby": {
 			"id": 4,
 			"url": "https://rinkeby.infura.io",
 			"contractAddr": "0x574ab7d775cc3d85c03bc4c7d88143cca91b4934",
@@ -42,7 +42,7 @@
 			"gasPrice": 100000000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 		},
-		"42": {
+		"kovan": {
 			"id": 42,
 			"url": "https://kovan.infura.io",
 			"contractAddr": "0x42ad30c467746e5790cc8944f9c6b4098cab85a5",

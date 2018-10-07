@@ -30,6 +30,7 @@ type Config struct {
 } 
 
 type Chain struct {
+	Name string 						`json:"name"`
 	Url string 							`json:"url"`
 	Id *big.Int 						`json:"id,omitempty"`
 	Contract string 		 			`json:"contractAddr"`
@@ -215,21 +216,22 @@ func main() {
 	}
 
 	// read config file for each chain id
-	for i, chainId := range chains {
+	for i, name := range chains {
 		clients[i] = new(client.Chain)
-		clients[i].Id = config.Chain[chainId].Id
+		clients[i].Id = config.Chain[name].Id
+		clients[i].Name = name 
 
 		// to start at block 0, `rm -rf log/`
 		startBlock := startup(clients[i].Id)
 		clients[i].StartBlock = startBlock
 
-		chain := config.Chain[chainId]
+		chain := config.Chain[name]
 		if chain == nil {
-			log.Fatal("could not find chain ", chainId, " in config")
+			log.Fatal("could not find chain ", name, " in config")
 		}
 
-		contractAddr := config.Chain[chainId].Contract
-		fmt.Println("contract address of chain", chainId, ":", contractAddr)
+		contractAddr := config.Chain[name].Contract
+		fmt.Println("contract address of chain", name, ":", contractAddr)
 		contract := new(common.Address)
 		contractBytes, err := hex.DecodeString(contractAddr[2:])
 		if err != nil {
@@ -238,15 +240,15 @@ func main() {
 		contract.SetBytes(contractBytes)
 		clients[i].Contract = contract
 
-		url := config.Chain[chainId].Url
-		fmt.Println("url of chain", chainId, ":", url)
+		url := config.Chain[name].Url
+		fmt.Println("url of chain", name, ":", url)
 		clients[i].Url = url
 
-		gasPrice := config.Chain[chainId].GasPrice
+		gasPrice := config.Chain[name].GasPrice
 		clients[i].GasPrice = gasPrice
 
-		fromAccount := config.Chain[chainId].From
-		fmt.Println("account to send txs from on chain", chainId, ":", fromAccount)
+		fromAccount := config.Chain[name].From
+		fmt.Println("account to send txs from on chain", name, ":", fromAccount)
 		from := new(common.Address)
 		fromBytes, err := hex.DecodeString(fromAccount[2:])
 		if err != nil {
@@ -284,42 +286,26 @@ func main() {
 	events := readAbi(flags["v"])
 
 	if depositCommand.Parsed() {
-		for _, chain := range chains {
-			id, err := new(big.Int).SetString(chain, 10)
-			if err != true {
-				log.Fatal("could not find chain", chain)
-			}
-			chain := client.FindChain(id, clients)
+		for _, name := range chains {
+			chain := client.FindChainByName(name, clients)
 			client.DepositPrompt(chain, ks)
 		}
 		return
 	} else if fundCommand.Parsed() {
-		for _, chain := range chains {
-			id, err := new(big.Int).SetString(chain, 10)
-			if err != true {
-				log.Fatal("could not find chain", chain)
-			}
-			chain := client.FindChain(id, clients)
+		for _, name := range chains {
+			chain := client.FindChainByName(name, clients)
 			client.FundPrompt(chain, ks)
 		}
 		return
 	} else if payCommand.Parsed() {
-		for _, chain := range chains {
-			id, err := new(big.Int).SetString(chain, 10)
-			if err != true {
-				log.Fatal("could not find chain", chain)
-			}
-			chain := client.FindChain(id, clients)
+		for _, name := range chains {
+			chain := client.FindChainByName(name, clients)
 			client.PayBridgePrompt(chain, ks)
 		}
 		return
 	} else if  withdrawCommand.Parsed() {
-		for _, chain := range chains {
-			id, err := new(big.Int).SetString(chain, 10)
-			if err != true {
-				log.Fatal("could not find chain", chain)
-			}
-			chain := client.FindChain(id, clients)
+		for _, name := range chains {
+			chain := client.FindChainByName(name, clients)
 			client.WithdrawToPrompt(chain, ks)
 		}
 		return	
