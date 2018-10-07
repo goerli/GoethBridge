@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 	"encoding/hex"
-	//"encoding/json"
-	//"io/ioutil"
 	"math/big"
 	"context"
 	"log"
@@ -15,7 +13,6 @@ import (
 	"syscall"
 	"sync"
 
-	//"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -30,15 +27,15 @@ var flags map[string]bool // command line flags
 var logsRead = map[string]bool{}
 
 type Chain struct {
-	Url string
-	Id *big.Int
-	Contract *common.Address
-	GasPrice *big.Int
-	From *common.Address
-	Password string
-	Client *ethclient.Client
-	Nonce uint64
-	StartBlock *big.Int
+	Url string 							`json:"url"`
+	Id *big.Int 						`json:"id,omitempty"`
+	Contract *common.Address 			`json:"contractAddr"`
+	GasPrice *big.Int 					`json:"gasPrice"`
+	From *common.Address 				`json:"from"`
+	Password string 					`json:"password,omitempty"`
+	Client *ethclient.Client 			`json:"client,omitempty"`
+	Nonce uint64 						`json:"nonce,omitempty"`
+	StartBlock *big.Int 				`json:"startBlock,omitempty"`
 }
 
 type Withdrawal struct {
@@ -356,8 +353,6 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 	fmt.Println("listening at: " + chain.Url)
 
 	fromBlock := chain.StartBlock
-	var blockRoot Root
-	roots := []Root{}
 
 	//lastBlocks[chain.Id] <- fromBlock
 	fmt.Println("starting block at chain", chain.Id, ":", fromBlock)
@@ -374,8 +369,6 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 
 	// every second, check for new logs and update block number
 	for {
-		blockRoot.Start = fromBlock
-
 		filter.FromBlock = fromBlock
 
 		// if not reading from all contracts, add the bridge contract address to the filter
@@ -396,23 +389,11 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 			}
 			if flags["v"] { fmt.Println("latest block at chain", chain.Id, ":", blockNum) }
 			fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
-
-			blockRoot.Hash, err = getBlockRoot(chain.Url, blockNum)
-			if err != nil {
-			//	fmt.Println("getBlockRoot error:", err)
-			}
 		} else if fromBlock != block.Number() {
 			if err != nil { fmt.Println(err) }
 			if flags["v"] { fmt.Println("latest block at chain", chain.Id, ":", block.Number()) }
 			fromBlock = block.Number()
-			blockRoot.Hash = block.Root()
 		}
-
-		if flags["v"] { fmt.Println("block root:", blockRoot.Hash.Hex()) }
-
-		blockRoot.Contract = chain.Contract
-		blockRoot.End = fromBlock
-		roots = append(roots, blockRoot)
 
 		<-logsDone
 
