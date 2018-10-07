@@ -2,7 +2,7 @@ package client
 
 import (
 	"fmt"
-	"jsonparser"
+	"encoding/json"
 	"net/http"
 	"bytes"
 	"io/ioutil"
@@ -10,12 +10,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/common"
 )
 
-/***** rpc methods ******/
-// used when making http requests
-
+/* rpc methods 
+/* used when making http requests
+*/
 
 // used for json format a response from an RPC call
 type Resp struct {
@@ -62,7 +61,7 @@ func getTxReceipt(txHash string, url string, client *http.Client) (string, error
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	receipt, err := ParseJsonForEntry(string(body), "result")
+	receipt, err := ParseJsonForResult(string(body))
 	if err != nil {
 		fmt.Println("could not parse logs")
 		fmt.Println(err)
@@ -87,7 +86,7 @@ func getRawTx(txData string, url string, client *http.Client) (string, error) {
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	//fmt.Println(string(body))
-	rawTx, err := ParseJsonForEntry(string(body), "result")
+	rawTx, err := ParseJsonForResult(string(body))
 	if err != nil {
 		fmt.Println("could not parse logs")
 		fmt.Println(err)
@@ -152,15 +151,10 @@ func getBlockNumber(url string) (string, error) {
        	return "", err
 	}
 	defer blockNumResp.Body.Close()
-
-	// print out response of eth_blockNumber
-	//fmt.Println("response Status:", blockNumResp.Status)
-	//fmt.Println("response Headers:", blockNumResp.Header)
 	blockNumBody, _ := ioutil.ReadAll(blockNumResp.Body)
-	//fmt.Println("response Body:", string(blockNumBody))
 
 	// parse json for result
-	startBlock, err := parseJsonForResult(string(blockNumBody))
+	startBlock, err := ParseJsonForResult(string(blockNumBody))
 	if err != nil {
 		return "", nil
 	}
@@ -178,39 +172,20 @@ func getBlockByNumber(url string, number string) (string, error) {
        	return "", err
 	}
 	defer blockNumResp.Body.Close()
-
-	// print out response of eth_blockNumber
-	//fmt.Println("response Status:", blockNumResp.Status)
-	//fmt.Println("response Headers:", blockNumResp.Header)
 	blockNumBody, _ := ioutil.ReadAll(blockNumResp.Body)
-	//fmt.Println("responnse Body:", string(blockNumBody))
 
 	// parse json for result
-	res, err := parseJsonForResult(string(blockNumBody))
+	res, err := ParseJsonForResult(string(blockNumBody))
 	if err != nil {
 		return "", nil
 	}
 	return res, nil
 }
 
-func getBlockRoot(url string, number string) (common.Hash, error) {
-	jsonRes, err := getBlockByNumber(url, number)
-	if err != nil {
-		return *new(common.Hash), err
-	}
-	root, err := ParseJsonForEntry(jsonRes, "hash")
-	if err != nil {
-		return *new(common.Hash), err
-	}
-	rootHash := common.HexToHash(root)
-	return rootHash, nil
-}
-
 func getNonce(address []byte, url string) (string) {
 	// get nonce
 	client := &http.Client{}
 	txCountData := fmt.Sprintf("\"0x%x\", \"latest\"", address)
-	//fmt.Println(txCountData)
 	resp, err := getTxCount(txCountData, url, client)
 	if err != nil {
 		fmt.Println(err)
@@ -218,35 +193,31 @@ func getNonce(address []byte, url string) (string) {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	nonce, err := ParseJsonForEntry(string(body), "result")
+	nonce, err := ParseJsonForResult(string(body))
 	if err != nil {
 		fmt.Println("could not parse logs")
 		fmt.Println(err)
 	}
-	//fmt.Println("account nonce: ", nonce)
-	//nonceBytes, err := hex.DecodeString(nonce[2:len(nonce)])
+
 	return nonce
 }
 
 /*****  helpers *****/
-// this function parses jsonStr for the result entry and returns its value as a string
-func parseJsonForResult(jsonStr string) (string, error) {
-	jsonBody := []byte(string(jsonStr))
-	res, _, _, err := jsonparser.Get(jsonBody, "result")
-	if err != nil {
-		return "", err
-	}
-	return string(res), nil
+type JsonRpcResponse struct {
+	Id int					`json:"id,omitempty"`
+	Jsonrpc string 			`json:"jsonrpc,omitempty"`
+	Result string 			`json:"result"`
 }
 
-// this function parses jsonStr for the entry "get" and returns its value as a string
-func ParseJsonForEntry(jsonStr string, get string) (string, error) {
-	jsonBody := []byte(string(jsonStr))
-	res, _, _, err := jsonparser.Get(jsonBody, get)
+// this function parses jsonStr for the entry "result" and returns its value as a string
+func ParseJsonForResult(jsonStr string) (string, error) {
+	jsonBody := []byte(jsonStr)
+	resp := new(JsonRpcResponse)
+	err := json.Unmarshal(jsonBody, resp)
 	if err != nil {
 		return "", err
 	}
-	return string(res), nil
+	return resp.Result, nil
 }
 
 func rlpDecodeTx(rawTxData string) (*types.Transaction) {

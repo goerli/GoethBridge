@@ -2,13 +2,10 @@ package main
 
 import (
 	"fmt"
-	//"net/http"
 	"math/big"
 	"io/ioutil"
-	//"time"
-	//"encoding/json"
+	"encoding/json"
 	"encoding/hex"
-	//"encoding/binary"
 	"path/filepath"
 	"strings"
 	"log"
@@ -27,6 +24,20 @@ import (
 /* global vars */
 var flags map[string]bool
 var ks *keystore.KeyStore
+
+type Config struct {
+	Chain map[string]*Chain  `json:"networks"`
+} 
+
+type Chain struct {
+	Url string 							`json:"url"`
+	Id *big.Int 						`json:"id,omitempty"`
+	Contract string 		 			`json:"contractAddr"`
+	GasPrice *big.Int					`json:"gasPrice"`
+	From string 		 				`json:"from"`
+	Password string 					`json:"password,omitempty"`
+	StartBlock int 		 				`json:"startBlock,omitempty"`
+}
 
 /****** keystore methods ******/
 func newKeyStore(path string) (*keystore.KeyStore) {
@@ -104,13 +115,6 @@ func printHeader() {
 }
 
 func main() {
-	//printHeader()
-	// var input string
-	// fmt.Println("enter function: ")
-	// fmt.Scanln(&input)
-	// sig := function.GenerateSignature(input)
-	// fmt.Println(sig)
-
 	/* flags */
 	headerPtr := flag.Bool("header", true, "a bool representing whether to print out the header or not")
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
@@ -202,29 +206,30 @@ func main() {
 	}
 
 	clients := make([]*client.Chain, len(chains))
-	// read config file for each chain id
-	for i, chain := range chains {
-		clients[i] = new(client.Chain)
 
-		clients[i].Id = new(big.Int)
-		clients[i].Id.SetString(chain, 10)
+	// unmarshal config
+	config := new(Config)
+	err = json.Unmarshal(file, config)
+	if err != nil {
+		log.Fatal("could not unmarshal config: ", err)
+	}
+
+	// read config file for each chain id
+	for i, chainId := range chains {
+		clients[i] = new(client.Chain)
+		clients[i].Id = config.Chain[chainId].Id
 
 		// to start at block 0, `rm -rf log/`
 		startBlock := startup(clients[i].Id)
 		clients[i].StartBlock = startBlock
 
-		chainStr, err := client.ParseJsonForEntry(string(file), chain)
-		if err != nil {
-			fmt.Println("could not find chain in config file")
-			log.Fatal(err)
+		chain := config.Chain[chainId]
+		if chain == nil {
+			log.Fatal("could not find chain ", chainId, " in config")
 		}
 
-		contractAddr, err := client.ParseJsonForEntry(chainStr, "contractAddr")
-		if err != nil {
-			fmt.Println("could not find contractAddr in config file")
-			log.Fatal(err)
-		}
-		fmt.Println("contract address of chain", chain, ":", contractAddr)
+		contractAddr := config.Chain[chainId].Contract
+		fmt.Println("contract address of chain", chainId, ":", contractAddr)
 		contract := new(common.Address)
 		contractBytes, err := hex.DecodeString(contractAddr[2:])
 		if err != nil {
@@ -233,29 +238,15 @@ func main() {
 		contract.SetBytes(contractBytes)
 		clients[i].Contract = contract
 
-		url, err := client.ParseJsonForEntry(chainStr, "url")
-		if err != nil {
-			fmt.Println("could not find url in config file")
-			log.Fatal(err)
-		}
-		fmt.Println("url of chain", chain, ":", url)
+		url := config.Chain[chainId].Url
+		fmt.Println("url of chain", chainId, ":", url)
 		clients[i].Url = url
 
-		gp, err := client.ParseJsonForEntry(chainStr, "gasPrice")
-		if err != nil {
-			fmt.Println("could not find gas price in config file")
-			log.Fatal(err)
-		}
-		bigGas := new(big.Int)
-		bigGas.SetString(gp, 10)
-		clients[i].GasPrice = bigGas
+		gasPrice := config.Chain[chainId].GasPrice
+		clients[i].GasPrice = gasPrice
 
-		fromAccount, err := client.ParseJsonForEntry(chainStr, "from")
-		if err != nil {
-			fmt.Println("could not find from account in config file")
-			log.Fatal(err)
-		}
-		fmt.Println("account to send txs from on chain", chain, ":", fromAccount)
+		fromAccount := config.Chain[chainId].From
+		fmt.Println("account to send txs from on chain", chainId, ":", fromAccount)
 		from := new(common.Address)
 		fromBytes, err := hex.DecodeString(fromAccount[2:])
 		if err != nil {
@@ -337,7 +328,7 @@ func main() {
 	/* channels */
 	doneClient := make(chan bool)
 
-	// wait group for interrupt handling
+	/* wait group for interrupt handling */
 	wg := new(sync.WaitGroup)
 	wg.Add(len(clients))
 
