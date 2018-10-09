@@ -217,6 +217,13 @@ func main() {
 
 	// read config file for each chain id
 	for i, name := range chains {
+		if _, ok := config.Chain[name]; ok {
+			 // continue  
+		} else {
+			log.Fatal("could not find chain ", name)
+			os.Exit(1)
+		}
+
 		clients[i] = new(client.Chain)
 		clients[i].Id = config.Chain[name].Id
 		clients[i].Name = name 
@@ -224,11 +231,6 @@ func main() {
 		// to start at block 0, `rm -rf log/`
 		startBlock := startup(clients[i].Id)
 		clients[i].StartBlock = startBlock
-
-		chain := config.Chain[name]
-		if chain == nil {
-			log.Fatal("could not find chain ", name, " in config")
-		}
 
 		contractAddr := config.Chain[name].Contract
 		fmt.Println("contract address of chain", name, ":", contractAddr)
@@ -294,6 +296,9 @@ func main() {
 	} else if fundCommand.Parsed() {
 		for _, name := range chains {
 			chain := client.FindChainByName(name, clients)
+			if chain == nil {
+				log.Fatal("chain not found in config")
+			}
 			client.FundPrompt(chain, ks)
 		}
 		return
