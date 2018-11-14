@@ -76,8 +76,7 @@ func Deposit(chain *Chain, value *big.Int, id string) {
 
 	err = client.SendTransaction(context.Background(), txSigned)
 	if err != nil {
-		fmt.Println("could not send tx")
-		fmt.Println(err)
+		fmt.Println("could not send tx:", err)
 	}
 }
 
