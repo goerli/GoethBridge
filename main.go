@@ -216,7 +216,7 @@ func main() {
 						password = subCommandArgs[subIndex][param+1]
 					}
 					chains = subCommandArgs[subIndex][0:param]
-					fmt.Println(chains)
+					break
 				} else {
 					chains = subCommandArgs[subIndex]
 					password = *passwordPtr
