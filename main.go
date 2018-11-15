@@ -204,19 +204,26 @@ func main() {
 	  Return the paramester before the index of the password -> [chains]
 	*/
 	var commandsNotParsed = 0
-	for subIndex := 0; subIndex < len(isSubCommandParsed); subIndex++ {
-		if isSubCommandParsed[subIndex] {
-			for param := 0; param < len(subCommandArgs[subIndex]); param++ {
-				if strings.Contains(subCommandArgs[subIndex][param], "--password") {
-					if param == len(subCommandArgs[subIndex])-1 {
-						password = subCommandArgs[subIndex][param][11:len(subCommandArgs[subIndex][param])]
+
+	for commandIndex, subCommand := range isSubCommandParsed {
+		if subCommand {
+			for paramIndex, param := range subCommandArgs[commandIndex] {
+				if strings.Contains(param, "--password") {
+					/*
+						Check if the index of the password flag == same length of all subcommand parameters
+						If == => --password="keystorePassword"
+						else if password flag index == length - 1 =>  --password keystorePassword
+					*/
+					if paramIndex == len(subCommandArgs[commandIndex])-1 {
+						password = subCommandArgs[commandIndex][paramIndex][11:len(subCommandArgs[commandIndex][paramIndex])]
 					} else {
-						password = subCommandArgs[subIndex][param+1]
+						password = subCommandArgs[commandIndex][paramIndex+1]
 					}
-					chains = subCommandArgs[subIndex][0:param]
+					chains = subCommandArgs[commandIndex][0:paramIndex]
 					break
+
 				} else {
-					chains = subCommandArgs[subIndex]
+					chains = subCommandArgs[commandIndex]
 					password = *passwordPtr
 				}
 			}
@@ -226,7 +233,6 @@ func main() {
 	}
 
 	if commandsNotParsed == len(isSubCommandParsed) {
-		fmt.Println("count at end", commandsNotParsed)
 		chains = flag.Args()
 		if len(chains) == 0 {
 			chains = append(chains, "1")
