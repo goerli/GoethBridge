@@ -1,24 +1,24 @@
 package main
 
 import (
-	"fmt"
-	"math/big"
-	"io/ioutil"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"math/big"
+	"os"
 	"path/filepath"
 	"strings"
-	"log"
-	"flag"
-	"os"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
-    "github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 
-    "github.com/ChainSafeSystems/ChainBridge/client"
+	"github.com/ChainSafeSystems/ChainBridge/client"
 )
 
 /* global vars */
@@ -26,39 +26,39 @@ var flags map[string]bool
 var ks *keystore.KeyStore
 
 type Config struct {
-	Chain map[string]*Chain  `json:"networks"`
-} 
+	Chain map[string]*Chain `json:"networks"`
+}
 
 type Chain struct {
-	Name string 						`json:"name"`
-	Url string 							`json:"url"`
-	Id *big.Int 						`json:"id,omitempty"`
-	Contract string 		 			`json:"contractAddr"`
-	GasPrice *big.Int					`json:"gasPrice"`
-	From string 		 				`json:"from"`
-	Password string 					`json:"password,omitempty"`
-	StartBlock int 		 				`json:"startBlock,omitempty"`
+	Name       string   `json:"name"`
+	Url        string   `json:"url"`
+	Id         *big.Int `json:"id,omitempty"`
+	Contract   string   `json:"contractAddr"`
+	GasPrice   *big.Int `json:"gasPrice"`
+	From       string   `json:"from"`
+	Password   string   `json:"password,omitempty"`
+	StartBlock int      `json:"startBlock,omitempty"`
 }
 
 /****** keystore methods ******/
-func newKeyStore(path string) (*keystore.KeyStore) {
+func newKeyStore(path string) *keystore.KeyStore {
 	newKeyStore := keystore.NewKeyStore(path, keystore.StandardScryptN, keystore.StandardScryptP)
 	return newKeyStore
 }
 
-func readAbi(verbose bool) (*client.Events) {
+func readAbi(verbose bool) *client.Events {
 	e := new(client.Events)
 
 	// read bridge contract abi
 	path, _ := filepath.Abs("./leth/build/Bridge.abi")
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-	    fmt.Println("Failed to read file:", err)
+		fmt.Println("Failed to read file:", err)
 	}
 
 	bridgeabi, err := abi.JSON(strings.NewReader(string(file)))
 	if err != nil {
-	    fmt.Println("Invalid abi:", err)
+		fmt.Println("Invalid abi:", err)
 	}
 
 	// checking abi for events
@@ -66,40 +66,52 @@ func readAbi(verbose bool) (*client.Events) {
 	depositEvent := bridgeEvents["Deposit"]
 	depositHash := depositEvent.Id()
 	e.DepositId = depositHash.Hex()
-	if verbose { fmt.Println("deposit event id: ", e.DepositId) }
+	if verbose {
+		fmt.Println("deposit event id: ", e.DepositId)
+	}
 
 	creationEvent := bridgeEvents["ContractCreation"]
 	creationHash := creationEvent.Id()
 	e.CreationId = creationHash.Hex()
-	if verbose { fmt.Println("contract creation event id: ", e.CreationId) }
+	if verbose {
+		fmt.Println("contract creation event id: ", e.CreationId)
+	}
 
 	withdrawEvent := bridgeEvents["Withdraw"]
 	withdrawHash := withdrawEvent.Id()
 	e.WithdrawId = withdrawHash.Hex()
-	if verbose { fmt.Println("withdraw event id: ", e.WithdrawId) }
+	if verbose {
+		fmt.Println("withdraw event id: ", e.WithdrawId)
+	}
 
 	bridgeSetEvent := bridgeEvents["BridgeSet"]
 	bridgeSetHash := bridgeSetEvent.Id()
 	e.BridgeSetId = bridgeSetHash.Hex()
-	if verbose { fmt.Println("set bridge event id: ", e.BridgeSetId) }
+	if verbose {
+		fmt.Println("set bridge event id: ", e.BridgeSetId)
+	}
 
 	bridgeFundedEvent := bridgeEvents["BridgeFunded"]
 	bridgeFundedHash := bridgeFundedEvent.Id()
 	e.BridgeFundedId = bridgeFundedHash.Hex()
-	if verbose { fmt.Println("bridge funded event id: ", e.BridgeFundedId) }
+	if verbose {
+		fmt.Println("bridge funded event id: ", e.BridgeFundedId)
+	}
 
 	paidEvent := bridgeEvents["Paid"]
 	paidHash := paidEvent.Id()
 	e.PaidId = paidHash.Hex()
-	if verbose { fmt.Println("bridge paid event id", e.PaidId) }
+	if verbose {
+		fmt.Println("bridge paid event id", e.PaidId)
+	}
 	return e
 }
 
-func startup(id *big.Int) (*big.Int) {
+func startup(id *big.Int) *big.Int {
 	path, _ := filepath.Abs("./log/" + id.String() + "_lastblock.txt")
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-	    fmt.Println("Failed to read file:", err)
+		fmt.Println("Failed to read file:", err)
 	}
 	startBlock := new(big.Int)
 	startBlock.SetString(string(file), 10)
@@ -120,12 +132,13 @@ func main() {
 	headerPtr := flag.Bool("header", true, "a bool representing whether to print out the header or not")
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
 	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
-	configPtr := flag.String("config", "./config.json", "a string of the path to the config file") 
-	keysPtr := flag.String("keystore", "./keystore", "a string of the path to the keystore directory") 
+	configPtr := flag.String("config", "./config.json", "a string of the path to the config file")
+	keysPtr := flag.String("keystore", "./keystore", "a string of the path to the keystore directory")
 	// password flag assumes you have the same account on every chain
-	passwordPtr := flag.String("password", "password", "a string of the password to the account specified in the config file") 
+	passwordPtr := flag.String("password", "password", "a string of the password to the account specified in the config file")
 	noListenPtr := flag.Bool("no-listen", false, "a bool; if true, do not start the listener")
 
+	/* subcommands */
 	depositCommand := flag.NewFlagSet("deposit", flag.ExitOnError)
 	fundCommand := flag.NewFlagSet("fund", flag.ExitOnError)
 	payCommand := flag.NewFlagSet("payCommand", flag.ExitOnError)
@@ -133,32 +146,40 @@ func main() {
 
 	// subcommands
 	if len(os.Args) > 1 {
-		switch os.Args[1]{
-			case "deposit":
-				depositCommand.Parse(os.Args[2:])
-			case "fund":
-				fundCommand.Parse(os.Args[2:])
-			case "pay":
-				payCommand.Parse(os.Args[2:])
-			case "withdraw":
-				withdrawCommand.Parse(os.Args[2:])
-			default:
-				// continue
+		switch os.Args[1] {
+		case "deposit":
+			depositCommand.Parse(os.Args[2:])
+		case "fund":
+			fundCommand.Parse(os.Args[2:])
+		case "pay":
+			payCommand.Parse(os.Args[2:])
+		case "withdraw":
+			withdrawCommand.Parse(os.Args[2:])
+		default:
+			// continue
 		}
 	}
 
+	// os.Exit(0)
+
 	flag.Parse()
 	header := *headerPtr
-	if header { printHeader() }
+	if header {
+		printHeader()
+	}
 
 	configStr := *configPtr
 	fmt.Println("config path: ", configStr)
 
 	verbose := *verbosePtr
-	if verbose { fmt.Println("verbose: ", verbose) }
+	if verbose {
+		fmt.Println("verbose: ", verbose)
+	}
 
 	readAll := *readAllPtr
-	if readAll { fmt.Println("read from all contracts? ", readAll)}
+	if readAll {
+		fmt.Println("read from all contracts? ", readAll)
+	}
 
 	keystorePath := *keysPtr
 	fmt.Println("keystore path: ", keystorePath)
@@ -166,25 +187,48 @@ func main() {
 	password := *passwordPtr
 	noListen := *noListenPtr
 
+	var isSubCommandParsed [4]bool
+	isSubCommandParsed[0] = depositCommand.Parsed()
+	isSubCommandParsed[1] = fundCommand.Parsed()
+	isSubCommandParsed[2] = payCommand.Parsed()
+	isSubCommandParsed[3] = withdrawCommand.Parsed()
+
+	var subCommandArgs [4][]string
+	subCommandArgs[0] = depositCommand.Args()
+	subCommandArgs[1] = fundCommand.Args()
+	subCommandArgs[2] = payCommand.Args()
+	subCommandArgs[3] = withdrawCommand.Args()
+
 	var chains []string
-	if depositCommand.Parsed() {
-		chains = depositCommand.Args()
-		fmt.Println("deposit to:", chains)
-	} else if fundCommand.Parsed() {
-		chains = fundCommand.Args()
-		fmt.Println("fund bridge on chains", chains)
-	} else if payCommand.Parsed() {
-		chains = payCommand.Args()
-		fmt.Println("pay bridge on chains", chains)
-	} else if withdrawCommand.Parsed() {
-		chains = withdrawCommand.Args()
-		fmt.Println("withdraw from bridge on chains", chains)
-	} else {
+
+	/*
+	  Loop through arguments for the subcommand that is parsed, extract the password for either format --password="pass" or --password pass
+	  Return the paramester before the index of the password -> [chains]
+	*/
+	var commandsNotParsed = 0
+	for subIndex := 0; subIndex < len(isSubCommandParsed); subIndex++ {
+		if isSubCommandParsed[subIndex] {
+			for param := 0; param < len(subCommandArgs[subIndex]); param++ {
+				if strings.Contains(subCommandArgs[subIndex][param], "--password") {
+					if param == len(subCommandArgs[subIndex])-1 {
+						password = subCommandArgs[subIndex][param][11:len(subCommandArgs[subIndex][param])]
+					} else {
+						password = subCommandArgs[subIndex][param+1]
+					}
+					chains = subCommandArgs[subIndex][0:param]
+				}
+			}
+		} else {
+			commandsNotParsed++
+		}
+	}
+
+	if commandsNotParsed == len(isSubCommandParsed) {
+		fmt.Println("count at end", commandsNotParsed)
 		chains = flag.Args()
 		if len(chains) == 0 {
-			chains = append(chains,"1")
+			chains = append(chains, "1")
 		}
-		fmt.Println("chains to connect to: ", chains)
 	}
 
 	flags = make(map[string]bool)
@@ -196,14 +240,16 @@ func main() {
 	ks = newKeyStore(keystorePath)
 	ksaccounts := ks.Accounts()
 	for i, account := range ksaccounts {
-		if verbose { fmt.Println("account", i, ":", account.Address.Hex()) }
+		if verbose {
+			fmt.Println("account", i, ":", account.Address.Hex())
+		}
 	}
 
 	// config file reading
 	path, _ := filepath.Abs(configStr)
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		fmt.Println("Failed to read file:", err)	
+		fmt.Println("Failed to read file:", err)
 	}
 
 	clients := make([]*client.Chain, len(chains))
@@ -218,7 +264,7 @@ func main() {
 	// read config file for each chain id
 	for i, name := range chains {
 		if _, ok := config.Chain[name]; ok {
-			 // continue  
+			// continue
 		} else {
 			log.Fatal("could not find chain ", name)
 			os.Exit(1)
@@ -226,7 +272,7 @@ func main() {
 
 		clients[i] = new(client.Chain)
 		clients[i].Id = config.Chain[name].Id
-		clients[i].Name = name 
+		clients[i].Name = name
 
 		// to start at block 0, `rm -rf log/`
 		startBlock := startup(clients[i].Id)
@@ -308,12 +354,12 @@ func main() {
 			client.PayBridgePrompt(chain, ks)
 		}
 		return
-	} else if  withdrawCommand.Parsed() {
+	} else if withdrawCommand.Parsed() {
 		for _, name := range chains {
 			chain := client.FindChainByName(name, clients)
 			client.WithdrawToPrompt(chain, ks)
 		}
-		return	
+		return
 	}
 
 	/* channels */
@@ -323,7 +369,7 @@ func main() {
 	wg := new(sync.WaitGroup)
 	wg.Add(len(clients))
 
-	if(!noListen) {
+	if !noListen {
 		/* listener */
 		fmt.Println("\nlistening for events...")
 		for _, chain := range clients {

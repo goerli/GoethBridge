@@ -26,7 +26,7 @@
 			"url": "https://ropsten.infura.io",
 			"contractAddr": "0x7d67bb33a0219cfa2c545b506e97a55f90c67104",
 			"gasPrice": 100000000,
-			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
+			"from": "0xc7756f27d7f8c2e45d790bfd340a4ab73b4a6e95"
 		},
 		"rinkeby": {
 			"id": 4,
