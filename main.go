@@ -160,8 +160,6 @@ func main() {
 		}
 	}
 
-	// os.Exit(0)
-
 	flag.Parse()
 	header := *headerPtr
 	if header {
