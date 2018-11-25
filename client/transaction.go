@@ -189,7 +189,7 @@ func FundBridge(chain *Chain, value *big.Int) {
 	nonce, err := client.PendingNonceAt(context.Background(), *chain.From)
 	chain.Nonce = nonce
 
-	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value, uint64(4600000), chain.GasPrice, data)
+	tx := types.NewTransaction(chain.Nonce, *chain.Contract, value,  uint64(4600000), chain.GasPrice, data)
 	txSigned, err := keys.SignTxWithPassphrase(*from, chain.Password, tx, chain.Id)
 	if err != nil {
 		fmt.Println("could not sign tx")

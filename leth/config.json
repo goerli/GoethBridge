@@ -1,13 +1,58 @@
 {
-	"networks": {
-		"default": {
-			"name": "default",
-			"url": "http://localhost:8545",
-			"from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30",
-			"keystore": "../keystore",
-			"password": "password",
-			"gas": 100000000,
-			"gasPrice": 4700000
-		}
-	}
+         "networks": {
+        	"default": {
+        		"name": "default",
+        		"url": "http://localhost:8545",
+        		"from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30",
+        		"keystore": "../keystore",
+        		"password": "password",
+        		"gas": 100000000,
+        		"gasPrice": 4700000
+        	},
+        	"testnet": {
+        		"name": "testnet",
+        		"url": "http://localhost:7545",
+        		"from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30",
+        		"keystore": "../keystore",
+        		"password": "password",
+        		"gas": 100000000,
+        		"gasPrice": 4700000
+        	},
+                "ropsten": {
+                        "name": "ropsten",
+                        "url": "https://ropsten.infura.io/mew",
+                        "from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49",
+                        "keystore": "../keystore",
+                        "password": "password",
+                        "gas": 100000000,
+                        "gasPrice": 4700000
+                },
+                "rinkeby": {
+                        "name": "rinkeby",
+                        "url": "https://rinkeby.infura.io/mew",
+                        "from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49",
+                        "keystore": "../keystore",
+                        "password": "password",
+                        "gas": 10000000000,
+                        "gasPrice": 4700000
+                },
+                "kovan": {
+                        "name": "kovan",
+                        "url": "https://kovan.infura.io/mew",
+                        "from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49",
+                        "keystore": "../keystore",
+                        "password": "password",
+                        "gas": 100000000,
+                        "gasPrice": 4700000
+                },
+                "goerli": {
+                        "name": "goerli",
+                        "url": "https://goerli.public.node",
+                        "from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30",
+                        "keystore": "../keystore",
+                        "password": "password",
+                        "gas": 100000000,
+                        "gasPrice": 4700000
+                }
+        }
 }
