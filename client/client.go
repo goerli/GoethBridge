@@ -27,6 +27,7 @@ var flags map[string]bool // command line flags
 var logsRead = map[string]bool{}
 
 type Chain struct {
+	Name string 						`json:"name"`
 	Url string 							`json:"url"`
 	Id *big.Int 						`json:"id,omitempty"`
 	Contract *common.Address 			`json:"contractAddr"`
@@ -106,6 +107,15 @@ func findChainIndex(id *big.Int, allChains []*Chain) int {
 func FindChain(id *big.Int, allChains []*Chain) (*Chain) {
 	for _, chain := range allChains {
 		if chain.Id.Cmp(id) == 0 { return chain }
+	}
+	return nil
+}
+
+func FindChainByName(name string, allChains []*Chain) (*Chain) {
+	for _, chain := range allChains {
+		if chain.Name == name {
+			return chain
+		}
 	}
 	return nil
 }
