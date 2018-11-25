@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/ChainSafeSystems/ChainBridge/client"
+	"github.com/ChainSafeSystems/ChainBridge/logger"
 )
 
 /* global vars */
@@ -111,7 +112,7 @@ func startup(id *big.Int) *big.Int {
 	path, _ := filepath.Abs("./log/" + id.String() + "_lastblock.txt")
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		fmt.Println("Failed to read file:", err)
+		logger.Warn("%s", err)
 	}
 	startBlock := new(big.Int)
 	startBlock.SetString(string(file), 10)
@@ -144,6 +145,10 @@ func main() {
 	payCommand := flag.NewFlagSet("payCommand", flag.ExitOnError)
 	withdrawCommand := flag.NewFlagSet("withrawCommand", flag.ExitOnError)
 
+	/* admin subcommands */
+	// addAuthority := flag.NewFlagSet("addauth", flag.ExitOnError)
+	// removeAuthory := flag.NewFlagSet("removeauth", flag.ExitOnError)
+
 	// subcommands
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
@@ -167,20 +172,20 @@ func main() {
 	}
 
 	configStr := *configPtr
-	fmt.Println("config path: ", configStr)
+	logger.Info("config path: %s", configStr)
 
 	verbose := *verbosePtr
 	if verbose {
-		fmt.Println("verbose: ", verbose)
+		logger.Info("verbose: %s", verbose)
 	}
 
 	readAll := *readAllPtr
 	if readAll {
-		fmt.Println("read from all contracts? ", readAll)
+		logger.Info("read from all contracts? %s", readAll)
 	}
 
 	keystorePath := *keysPtr
-	fmt.Println("keystore path: ", keystorePath)
+	logger.Info("keystore path: %s", keystorePath)
 
 	password := *passwordPtr
 	noListen := *noListenPtr
@@ -249,7 +254,7 @@ func main() {
 	ksaccounts := ks.Accounts()
 	for i, account := range ksaccounts {
 		if verbose {
-			fmt.Println("account", i, ":", account.Address.Hex())
+			logger.Info("account %d: %s", i, account.Address.Hex())
 		}
 	}
 
@@ -257,7 +262,7 @@ func main() {
 	path, _ := filepath.Abs(configStr)
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		fmt.Println("Failed to read file:", err)
+		logger.FatalError("Failed to read file: %s", err)
 	}
 
 	clients := make([]*client.Chain, len(chains))
@@ -266,7 +271,7 @@ func main() {
 	config := new(Config)
 	err = json.Unmarshal(file, config)
 	if err != nil {
-		log.Fatal("could not unmarshal config: ", err)
+		logger.FatalError("could not unmarshal config: %s", err)
 	}
 
 	// read config file for each chain id
@@ -274,8 +279,7 @@ func main() {
 		if _, ok := config.Chain[name]; ok {
 			// continue
 		} else {
-			log.Fatal("could not find chain ", name)
-			os.Exit(1)
+			logger.FatalError("could not find chain %s", name)
 		}
 
 		clients[i] = new(client.Chain)
@@ -287,28 +291,28 @@ func main() {
 		clients[i].StartBlock = startBlock
 
 		contractAddr := config.Chain[name].Contract
-		fmt.Println("contract address of chain", name, ":", contractAddr)
+		logger.Info("contract address of chain %s: %s", name, contractAddr)
 		contract := new(common.Address)
 		contractBytes, err := hex.DecodeString(contractAddr[2:])
 		if err != nil {
-			log.Fatal(err)
+			logger.FatalError("%s", err)
 		}
 		contract.SetBytes(contractBytes)
 		clients[i].Contract = contract
 
 		url := config.Chain[name].Url
-		fmt.Println("url of chain", name, ":", url)
+		logger.Info("url of chain %s: %s", name, url)
 		clients[i].Url = url
 
 		gasPrice := config.Chain[name].GasPrice
 		clients[i].GasPrice = gasPrice
 
 		fromAccount := config.Chain[name].From
-		fmt.Println("account to send txs from on chain", name, ":", fromAccount)
+		logger.Info("account to send txs from on chain %s: %s", name, fromAccount)
 		from := new(common.Address)
 		fromBytes, err := hex.DecodeString(fromAccount[2:])
 		if err != nil {
-			log.Fatal(err)
+			logger.FatalError("%s", err)
 		}
 		from.SetBytes(fromBytes)
 		clients[i].From = from
@@ -344,6 +348,9 @@ func main() {
 	if depositCommand.Parsed() {
 		for _, name := range chains {
 			chain := client.FindChainByName(name, clients)
+			if chain == nil {
+				logger.FatalError("chain not found in config")
+			}
 			client.DepositPrompt(chain, ks)
 		}
 		return
@@ -351,7 +358,7 @@ func main() {
 		for _, name := range chains {
 			chain := client.FindChainByName(name, clients)
 			if chain == nil {
-				log.Fatal("chain not found in config")
+				logger.FatalError("chain not found in config")
 			}
 			client.FundPrompt(chain, ks)
 		}
@@ -359,12 +366,18 @@ func main() {
 	} else if payCommand.Parsed() {
 		for _, name := range chains {
 			chain := client.FindChainByName(name, clients)
+			if chain == nil {
+				logger.FatalError("chain not found in config")
+			}
 			client.PayBridgePrompt(chain, ks)
 		}
 		return
 	} else if withdrawCommand.Parsed() {
 		for _, name := range chains {
 			chain := client.FindChainByName(name, clients)
+			if chain == nil {
+				logger.FatalError("chain not found in config")
+			}
 			client.WithdrawToPrompt(chain, ks)
 		}
 		return
@@ -379,7 +392,7 @@ func main() {
 
 	if !noListen {
 		/* listener */
-		fmt.Println("\nlistening for events...")
+		logger.Info("listening for events...")
 		for _, chain := range clients {
 			go client.Listen(chain, clients, events, doneClient, ks, flags, wg)
 		}
