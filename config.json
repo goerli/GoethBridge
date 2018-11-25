@@ -24,30 +24,37 @@
 		"ropsten": {
 			"id": 3,
 			"url": "https://ropsten.infura.io",
-			"contractAddr": "0x7d67bb33a0219cfa2c545b506e97a55f90c67104",
+			"contractAddr": "0x51F4A0f0D3bf30600d07396dAde1eE2e4Bca9b5e",
 			"gasPrice": 100000000,
 			"from": "0xc7756f27d7f8c2e45d790bfd340a4ab73b4a6e95"
 		},
 		"rinkeby": {
 			"id": 4,
 			"url": "https://rinkeby.infura.io",
-			"contractAddr": "0x574ab7d775cc3d85c03bc4c7d88143cca91b4934",
+			"contractAddr": "0xc17B3D931545558B213A322f3A4842F488d382b8",
 			"gasPrice": 100000000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 		},
 		"testnet": {
 			"id": 1337,
 			"url": "http://127.0.0.1:8545",
-			"contractAddr": "0x0b197606442affae8402f9030edbe9234c2069fe",
+			"contractAddr": "0xb63FB10A550d3d4a8e0d8a82672b43A96fc78d41",
 			"gasPrice": 100000000,
-			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
+			"from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30"
+		},
+		"testnet2": {
+			"id": 1338,
+			"url": "http://127.0.0.1:7545",
+			"contractAddr": "0x62de05f10E1e825EfBFd4A45A1a9EA666D4c8A40",
+			"gasPrice": 100000000,
+			"from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30"
 		},
 		"kovan": {
 			"id": 42,
 			"url": "https://kovan.infura.io",
 			"contractAddr": "0x42ad30c467746e5790cc8944f9c6b4098cab85a5",
 			"gasPrice": 100000000,
-			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
+			"from": "0x83a8e0bd54ff6dc11da80151563b8150534280be"
 		},
 		"rsk": {
 			"id": 31,
