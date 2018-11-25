@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"encoding/hex"
 	"context"
 	"math/big"
@@ -120,8 +119,8 @@ func WithdrawTo(chain *Chain, value *big.Int, id string) error {
 }
 
 func Withdraw(chain *Chain, withdrawal *Withdrawal) error {
-	withdrawal := setWithdrawalData(withdrawal)
-	dataStr := "4250a6f3" + padTo32Bytes(withdrawal.Data) // withdraw function signature + contract addr
+	w := setWithdrawalData(withdrawal)
+	dataStr := "4250a6f3" + padTo32Bytes(w.Data) // withdraw function signature + contract addr
 	data, err := hex.DecodeString(dataStr)
 	if err != nil {
 		return err
