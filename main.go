@@ -113,6 +113,9 @@ func readAbi(verbose bool) *client.Events {
 		logger.Info("threshold updated id: %s", e.ThresholdUpdated)
 	}
 
+	signedEvent := bridgeEvents["SignedForWithdraw"].Id().Hex()
+	e.SignedForWithdraw = signedEvent
+
 	return e
 }
 
@@ -154,7 +157,7 @@ func printHeader() {
 
 func main() {
 	/* flags */
-	headerPtr := flag.Bool("header", true, "a bool representing whether to print out the header or not")
+	headerPtr := flag.Bool("header", false, "a bool representing whether to print out the header or not")
 	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
 	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
 	configPtr := flag.String("config", "./config.json", "a string of the path to the config file")
@@ -163,17 +166,17 @@ func main() {
 	passwordPtr := flag.String("password", "password", "a string of the password to the account specified in the config file")
 	noListenPtr := flag.Bool("no-listen", false, "a bool; if true, do not start the listener")
 
-	/* subcommands */
+	/* bridge subcommands */
 	depositCommand := flag.NewFlagSet("deposit", flag.ExitOnError)
 	fundCommand := flag.NewFlagSet("fund", flag.ExitOnError)
-	payCommand := flag.NewFlagSet("payCommand", flag.ExitOnError)
-	withdrawCommand := flag.NewFlagSet("withrawCommand", flag.ExitOnError)
+	payCommand := flag.NewFlagSet("pay", flag.ExitOnError)
+	withdrawCommand := flag.NewFlagSet("withdrawto", flag.ExitOnError)
 
 	/* admin subcommands */
-	addAuthority := flag.NewFlagSet("addauth", flag.ExitOnError)
-	removeAuthority := flag.NewFlagSet("removeauth", flag.ExitOnError)
-	increaseThreshold := flag.NewFlagSet("incauth", flag.ExitOnError)
-	decreaseThreshold := flag.NewFlagSet("decauth", flag.ExitOnError)
+	addAuthorityCommand := flag.NewFlagSet("addauth", flag.ExitOnError)
+	removeAuthorityCommand := flag.NewFlagSet("removeauth", flag.ExitOnError)
+	increaseThresholdCommand := flag.NewFlagSet("incauth", flag.ExitOnError)
+	decreaseThresholdCommand := flag.NewFlagSet("decauth", flag.ExitOnError)
 
 	// subcommands
 	if len(os.Args) > 1 {
@@ -187,13 +190,13 @@ func main() {
 		case "withdraw":
 			withdrawCommand.Parse(os.Args[2:])
 		case "addauth":
-			addAuthority.Parse(os.Args[2:])
+			addAuthorityCommand.Parse(os.Args[2:])
 		case "removeauth":
-			removeAuthority.Parse(os.Args[2:])
+			removeAuthorityCommand.Parse(os.Args[2:])
 		case "incauth":
-			increaseThreshold.Parse(os.Args[2:])
+			increaseThresholdCommand.Parse(os.Args[2:])
 		case "decauth":
-			decreaseThreshold.Parse(os.Args[2:])
+			decreaseThresholdCommand.Parse(os.Args[2:])
 		default:
 			// continue
 		}
@@ -410,7 +413,7 @@ func main() {
 			client.WithdrawToPrompt(chain, ks)
 		}
 		return
-	} else if addAuthority.Parsed() {
+	} else if addAuthorityCommand.Parsed() {
 		for _, name := range chains {
 			chain := client.FindChainByName(name, clients)
 			if chain == nil {
@@ -419,7 +422,7 @@ func main() {
 			client.AddAuthorityPrompt(chain, ks)
 		}
 		return		
-	} else if removeAuthority.Parsed() {
+	} else if removeAuthorityCommand.Parsed() {
 		for _, name := range chains {
 			chain := client.FindChainByName(name, clients)
 			if chain == nil {
@@ -428,7 +431,7 @@ func main() {
 			client.RemoveAuthorityPrompt(chain, ks)
 		}
 		return		
-	} else if increaseThreshold.Parsed() {
+	} else if increaseThresholdCommand.Parsed() {
 		for _, name := range chains {
 			chain := client.FindChainByName(name, clients)
 			if chain == nil {
@@ -437,7 +440,7 @@ func main() {
 			client.IncreaseThresholdPrompt(chain, ks)
 		}
 		return		
-	} else if decreaseThreshold.Parsed() {
+	} else if decreaseThresholdCommand.Parsed() {
 		for _, name := range chains {
 			chain := client.FindChainByName(name, clients)
 			if chain == nil {

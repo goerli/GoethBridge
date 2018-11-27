@@ -31,7 +31,7 @@
 		"rinkeby": {
 			"id": 4,
 			"url": "https://rinkeby.infura.io",
-			"contractAddr": "0xc17B3D931545558B213A322f3A4842F488d382b8",
+			"contractAddr": "0xb3Da0d9f7Bf0A6B362B47C67Ac762EB7C683A85d",
 			"gasPrice": 100000000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 		},
@@ -52,7 +52,7 @@
 		"kovan": {
 			"id": 42,
 			"url": "https://kovan.infura.io",
-			"contractAddr": "0x42ad30c467746e5790cc8944f9c6b4098cab85a5",
+			"contractAddr": "0x5695FDa18016f9B9CEA7fB7f0Eec1e5b1E7BF2e3",
 			"gasPrice": 100000000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 		}

@@ -59,6 +59,7 @@ type Events struct {
 	AuthorityAddedId string
 	AuthorityRemovedId string
 	ThresholdUpdated string
+	SignedForWithdraw string
 }
 
 /****** helpers ********/
@@ -168,6 +169,9 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 				} else if strings.Compare(topic, events.ThresholdUpdated) == 0 {
 					logger.Event("threshold updated event: tx hash: %s", txHash)
 					logger.Event("threshold: %s", log.Topics[1])
+				} else if strings.Compare(topic, events.SignedForWithdraw) == 0 {
+					logger.Event("signed for withdraw: tx hash: %s", txHash)
+					logger.Event("tx signed for: %s", log.Topics[1])
 				}
 			}
 		}

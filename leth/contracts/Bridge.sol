@@ -12,7 +12,6 @@ pragma solidity ^0.5.0;
 
 contract Bridge {
 	address public owner;
-	address public bridge;
 
 	uint256 threshold = 1; // the number of signatures that must be reached for a withdraw to take place
 
@@ -36,7 +35,7 @@ contract Bridge {
 
 	constructor() public {
 		owner = msg.sender;
-		bridge = msg.sender;
+		authorities[owner] = true;
 		emit ContractCreation(msg.sender);
 	}
 

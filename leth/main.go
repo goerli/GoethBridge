@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/ChainSafeSystems/"
+	"github.com/ChainSafeSystems/leth/core"
 )
 
 func main() {
-	err := core.Migrate("default", "Bridge")
+	err := core.Migrate("rinkeby", "Bridge")
 	if err != nil {
 		fmt.Println("could not deploy Bridge.sol to default network")
 	}

@@ -170,7 +170,8 @@ func WithdrawTo(chain *Chain, value *big.Int, id string) error {
 
 func Withdraw(chain *Chain, withdrawal *Withdrawal) error {
 	w := setWithdrawalData(withdrawal)
-	dataStr := "4250a6f3" + w.Data // withdraw function signature
+	//dataStr := "4250a6f3" + w.Data // withdraw function signature
+	dataStr := "4250a6f3" + w.Data
 	data, err := hex.DecodeString(dataStr)
 	if err != nil {
 		return err
