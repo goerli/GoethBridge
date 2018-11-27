@@ -11,7 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 	"sync"
-	//"strconv"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum"
@@ -95,7 +95,7 @@ func setWithdrawalData(w *Withdrawal) (*Withdrawal) {
 	if len(valueString) != 64 {
 		logger.Warn("value formatted incorrectly")
 	}
-	w.Data = w.Recipient + valueString + w.FromChain + w.TxHash
+	w.Data = padTo32Bytes(w.Recipient) + valueString + w.FromChain + w.TxHash
 	return w
 }
 
@@ -168,15 +168,25 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 					logger.Event("bridge paid event: tx hash: %s", txHash)
 				} else if strings.Compare(topic, events.ThresholdUpdated) == 0 {
 					logger.Event("threshold updated event: tx hash: %s", txHash)
-					logger.Event("threshold: %s", log.Topics[1])
+					data := getTxData(chain, log.TxHash)
+					threshold, _ := strconv.Atoi(data[8:40])
+					logger.Event("new threshold: %s", threshold)
 				} else if strings.Compare(topic, events.SignedForWithdraw) == 0 {
-					logger.Event("signed for withdraw: tx hash: %s", txHash)
-					logger.Event("tx signed for: %s", log.Topics[1])
+					logger.Event("signed for withdraw event: tx hash: %s", txHash)
+					data := getTxData(chain, log.TxHash)
+					logger.Event("tx hash signed for: %s", data[8:40])
+					//logger.Event("%s", topic)
 				}
 			}
 		}
 	}
 	logsDone <- true
+}
+
+func getTxData(chain *Chain, txHash common.Hash) (string) {
+	tx := waitOnPending(chain, txHash)
+	data := hex.EncodeToString(tx.Data())
+	return data
 }
 
 func waitOnPending(chain *Chain, txHash common.Hash) (*types.Transaction) {
