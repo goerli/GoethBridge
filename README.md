@@ -1,9 +1,9 @@
-# Multi Directional Bridge
+# GöethBridge
 
-this is a go implementation of a generic bridge between blockchains. the bridge will be able to connect any networks using native fuel or any token.
+This is a go implementation of a generic bridge between blockchains. Made specifically to allow testnet eth from rinkeby, kovan, and ropsten to be burned for Göeth (Görli eth). 
 
 ### todo
-* implement support for non EVM based blockchains
+* allow for Göeth to be converted back to the other testnets. 
 
 ### requirements
 go 1.9.1
@@ -15,11 +15,12 @@ leth
 `go get github.com/ChainSafeSystems/leth`
 
 # to get the bridge
-`go get github.com/ChainSafeSystems/ChainBridge`
+`go get github.com/goerli/GoethBridge`
 
 # to run
+#### generic instructions for bridge, needs to be updated!
 ```
-cd $GOPATH/src/github.com/ChainSafeSystems/ChainBridge
+cd $GOPATH/src/github.com/goerli/GoethBridge
 cd leth && leth compile
 cd ..
 go build && go install
