@@ -99,12 +99,12 @@ func readAbi(verbose bool) *client.Events {
 		fmt.Println("bridge paid event id", e.PaidId)
 	}
 
-	addAuthEvent := bridgeEvents["AuthorityAdded"]
-	addAuthHash := addAuthEvent.Id()
-	e.AuthorityAddedId = addAuthHash.Hex()
-	if verbose {
-		fmt.Println("added authority id: ", e.AuthorityAddedId)
-	}
+	// addAuthEvent := bridgeEvents["AuthorityAdded"]
+	// addAuthHash := addAuthEvent.Id()
+	// e.AuthorityAddedId = addAuthHash.Hex()
+	// if verbose {
+	// 	fmt.Println("added authority id: ", e.AuthorityAddedId)
+	// }
 
 	return e
 }
@@ -408,7 +408,7 @@ func main() {
 			if chain == nil {
 				logger.FatalError("chain not found in config")
 			}
-			client.AddAuthorityPrompt(chain, ks)
+			//client.AddAuthorityPrompt(chain, ks)
 		}
 		return		
 	}
