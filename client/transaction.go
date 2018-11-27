@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"encoding/hex"
 	"context"
 	"math/big"
