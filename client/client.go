@@ -11,7 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 	"sync"
-	"strconv"
+	//"strconv"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum"
@@ -142,8 +142,11 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 	for _, log := range logs {
 		txHash := log.TxHash.Hex()
 		if(!logsRead[txHash]) {
+			logsRead[txHash] = true
+
 			logger.Event("logs found on %s at block %d", chain.Name, log.BlockNumber)
 			logger.Event("contract address: %s", log.Address.Hex())
+
 			for _, topics := range log.Topics {
 				topic := topics.Hex()
 				if strings.Compare(topic, events.DepositId) == 0 { 
@@ -164,7 +167,6 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 					logger.Event("bridge paid event: tx hash: %s", txHash)
 				}
 			}
-			logsRead[txHash] = true
 		}
 	}
 	logsDone <- true
@@ -203,10 +205,10 @@ func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdra
 		toChain := data[72:136]
 		value := tx.Value()
 
-		to, _ := strconv.Atoi(toChain)
+		//to, _ := strconv.Atoi(toChain)
 		logger.Event("receiver: 0x%s", receiver) 
 		logger.Event("value: %d", value) // in hexidecimal
-		logger.Event("to chain: %d", to) // in hexidecimal
+		//logger.Event("to chain: %d", to) // in hexidecimal
 
 		withdrawal.Recipient = data[32:72]
 		withdrawal.FromChain = toChain
@@ -215,16 +217,20 @@ func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdra
 
 		fromChain := new(big.Int)
 		fromChain.SetString(toChain, 16)
-		logger.Info("chain to withdraw to: %s", fromChain)
+		logger.Event("chain to withdraw to: %s", fromChain)
 
 		idx := findChainIndex(fromChain, allChains)
 
 		if idx == -1 {
 			logger.Error("could not find chain to withdraw to")
 		} else {
-			Withdraw(allChains[idx], withdrawal)
+			err := Withdraw(allChains[idx], withdrawal)
+			if err != nil {
+				logger.Error("%s", err)
+			}
 		}
 	}
+
 	withdrawDone <- true
 }
 
