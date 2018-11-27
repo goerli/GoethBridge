@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /* Bridge Smart Contract 
 * @noot
@@ -83,7 +83,7 @@ contract Bridge {
 	}
 
 	/* bridge functions */
-	function () public payable {
+	function () external payable {
 		balance[msg.sender] += msg.value;
 		emit Paid(msg.sender, msg.value);
 	}
@@ -103,7 +103,7 @@ contract Bridge {
 		emit Deposit(_recipient, _value, _toChain);
 	}
 
-	function withdraw(address _recipient, uint _value, uint _fromChain, bytes32 _txHash) public onlyAuthority {
+	function withdraw(address payable _recipient, uint _value, uint _fromChain, bytes32 _txHash) public onlyAuthority {
 		// make sure authority has not already signed for this withdraw
 		require(!signedWithdrawal[_txHash][msg.sender]);
 		withdrawal[_txHash]++;

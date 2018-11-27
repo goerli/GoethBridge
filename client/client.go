@@ -12,12 +12,15 @@ import (
 	"os/signal"
 	"syscall"
 	"sync"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
+
+	"github.com/ChainSafeSystems/ChainBridge/logger"
 )
 
 /* global variables */
@@ -85,14 +88,14 @@ func padIntTo32Bytes(n int64) (string) {
 
 // set w.Data
 func setWithdrawalData(w *Withdrawal) (*Withdrawal) {
-		valueBytes := w.Value.Bytes()
-		valueString := hex.EncodeToString(valueBytes)
-		valueString = padTo32Bytes(valueString)
-		if len(valueString) != 64 {
-			fmt.Println("value formatted incorrectly")
-		}
-		w.Data = w.Recipient + valueString + w.FromChain + w.TxHash
-		return w
+	valueBytes := w.Value.Bytes()
+	valueString := hex.EncodeToString(valueBytes)
+	valueString = padTo32Bytes(valueString)
+	if len(valueString) != 64 {
+		logger.Warn("value formatted incorrectly")
+	}
+	w.Data = w.Recipient + valueString + w.FromChain + w.TxHash
+	return w
 }
 
 // find the index in allChains of a chain with a particular Id
@@ -125,7 +128,7 @@ func FindChainByName(name string, allChains []*Chain) (*Chain) {
 func Filter(chain *Chain, allChains []*Chain, filter *ethereum.FilterQuery, logsDone chan bool) {
 	logs, err := chain.Client.FilterLogs(context.Background(), *filter)
 	if err != nil {
-		fmt.Println(err)
+		logger.Error("%s", err)
 	}
 
 	if len(logs) != 0 {
@@ -136,43 +139,29 @@ func Filter(chain *Chain, allChains []*Chain, filter *ethereum.FilterQuery, logs
 }
 
 func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan bool) {
-	//logs := <-ch
-	//fmt.Println(logs)
 	for _, log := range logs {
 		txHash := log.TxHash.Hex()
 		if(!logsRead[txHash]) {
-			fmt.Println("\nlogs found on chain", chain.Id, "at block", log.BlockNumber)
-			fmt.Println("contract address: ", log.Address.Hex())
+			logger.Event("logs found on %s at block %d", chain.Name, log.BlockNumber)
+			logger.Event("contract address: %s", log.Address.Hex())
 			for _, topics := range log.Topics {
 				topic := topics.Hex()
-				fmt.Println("topics: ", topic)
-
 				if strings.Compare(topic, events.DepositId) == 0 { 
-					fmt.Println("*** deposit event")
-					fmt.Println("txHash: ", txHash)
+					logger.Event("deposit event: tx hash: %s", txHash)
 					withdrawDone := make(chan bool)
 					go HandleDeposit(chain, allChains, log.TxHash, withdrawDone)
 					<-withdrawDone
 			 	} else if strings.Compare(topic, events.CreationId) == 0 {
-					fmt.Println("*** bridge contract creation")
+					logger.Event("bridge contract creation")
 				} else if strings.Compare(topic, events.WithdrawId) == 0 {
-					fmt.Println("*** withdraw event")
-					txHash := log.TxHash.Hex()
-					fmt.Println("txHash: ", txHash)
+					logger.Event("withdraw event: tx hash: %s", txHash)
 					printWithdraw(chain, log.TxHash)
-					// receiver, value, toChain := readDepositData(data)
-					// fmt.Println("receiver: ", receiver) 
-					// fmt.Println("value: ", value) // in hexidecimal
-					// fmt.Println("to chain: ", toChain) // in hexidecimal
 				} else if strings.Compare(topic, events.BridgeSetId) == 0 {
-					fmt.Println("*** set bridge event")
-					fmt.Println("txHash: ", txHash)
+					logger.Event("set bridge event: tx hash: %s", txHash)
 				} else if strings.Compare(topic, events.BridgeFundedId) == 0 {
-					fmt.Println("*** funded bridge event")
-					fmt.Println("txHash: ", txHash)
+					logger.Event("funded bridge event: tx hash: %s", txHash)
 				} else if strings.Compare(topic, events.PaidId) == 0 {
-					fmt.Println("*** bridge paid event")
-					fmt.Println("txHash: ", txHash)
+					logger.Event("bridge paid event: tx hash: %s", txHash)
 				}
 			}
 			logsRead[txHash] = true
@@ -197,9 +186,9 @@ func printWithdraw(chain *Chain, txHash common.Hash) {
 		value := data[72:136]
 		fromChain := data[136:200]
 
-		fmt.Println("receiver: ", receiver) 
-		fmt.Println("value: ", value) // in hexidecimal
-		fmt.Println("from chain: ", fromChain) // in hexidecimal
+		logger.Event("receiver: 0x%s", receiver) 
+		logger.Event("value: %s", value) // in hexidecimal
+		logger.Event("from chain: %s", fromChain) // in hexidecimal
 	}
 }
 
@@ -210,13 +199,14 @@ func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdra
 	data := hex.EncodeToString(tx.Data())
 
 	if len(data) > 72 {
-		receiver := data[32:72];
+		receiver := data[32:72]
 		toChain := data[72:136]
 		value := tx.Value()
 
-		fmt.Println("receiver: ", receiver) 
-		fmt.Println("value: ", value) // in hexidecimal
-		fmt.Println("to chain: ", toChain) // in hexidecimal
+		to, _ := strconv.Atoi(toChain)
+		logger.Event("receiver: 0x%s", receiver) 
+		logger.Event("value: %d", value) // in hexidecimal
+		logger.Event("to chain: %d", to) // in hexidecimal
 
 		withdrawal.Recipient = data[32:72]
 		withdrawal.FromChain = toChain
@@ -225,12 +215,12 @@ func HandleDeposit(chain *Chain, allChains []*Chain, txHash common.Hash, withdra
 
 		fromChain := new(big.Int)
 		fromChain.SetString(toChain, 16)
-		fmt.Println("chain to withdraw to: ", fromChain)
+		logger.Info("chain to withdraw to: %s", fromChain)
 
 		idx := findChainIndex(fromChain, allChains)
 
 		if idx == -1 {
-			fmt.Println("could not find chain to withdraw to")
+			logger.Error("could not find chain to withdraw to")
 		} else {
 			Withdraw(allChains[idx], withdrawal)
 		}
@@ -281,7 +271,6 @@ func DepositPrompt(chain *Chain, ks *keystore.KeyStore) {
 	valBig := big.NewInt(value)
 
 	toHex := fmt.Sprintf("%x", to)
-	//fmt.Println(toHex)
 	fmt.Println("confirm deposit on chain", chain.Id, "with value", value, "wei, withdrawing to chain", to)
 	fmt.Scanln(&confirm)
 	if confirm == -1 { 
@@ -360,12 +349,12 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 	}
 	chain.Client = client
 
-	fmt.Println("listening at: " + chain.Url)
+	logger.Info("listening at: %s", chain.Url)
 
 	fromBlock := chain.StartBlock
 
 	//lastBlocks[chain.Id] <- fromBlock
-	fmt.Println("starting block at chain", chain.Id, ":", fromBlock)
+	logger.Info("starting block on %s: %s", chain.Name, fromBlock)
 	filter := new(ethereum.FilterQuery)
 
 	c := make(chan os.Signal)
@@ -395,13 +384,19 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 			// could not get block with ethclient.. trying http request
 			blockNum, err := getBlockNumber(chain.Url)
 			if err != nil {
-				fmt.Println("getBlockNumber error:", err)
+				logger.Error("getBlockNumber error: %s", err)
 			}
-			if flags["v"] { fmt.Println("latest block at chain", chain.Id, ":", blockNum) }
+			if flags["v"] { 
+				logger.Info("latest block on %s: %s", chain.Name, blockNum) 
+			}
 			fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
 		} else if fromBlock != block.Number() {
-			if err != nil { fmt.Println(err) }
-			if flags["v"] { fmt.Println("latest block at chain", chain.Id, ":", block.Number()) }
+			if err != nil { 
+				logger.Error("%s", err) 
+			}
+			if flags["v"] { 
+				logger.Info("latest block on %s: %s", chain.Name, block.Number()) 
+			}
 			fromBlock = block.Number()
 		}
 
