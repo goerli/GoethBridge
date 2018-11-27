@@ -85,13 +85,6 @@ func readAbi(verbose bool) *client.Events {
 		fmt.Println("withdraw event id: ", e.WithdrawId)
 	}
 
-	bridgeSetEvent := bridgeEvents["BridgeSet"]
-	bridgeSetHash := bridgeSetEvent.Id()
-	e.BridgeSetId = bridgeSetHash.Hex()
-	if verbose {
-		fmt.Println("set bridge event id: ", e.BridgeSetId)
-	}
-
 	bridgeFundedEvent := bridgeEvents["BridgeFunded"]
 	bridgeFundedHash := bridgeFundedEvent.Id()
 	e.BridgeFundedId = bridgeFundedHash.Hex()
@@ -105,10 +98,34 @@ func readAbi(verbose bool) *client.Events {
 	if verbose {
 		fmt.Println("bridge paid event id", e.PaidId)
 	}
+
+	addAuthEvent := bridgeEvents["AuthorityAdded"]
+	addAuthHash := addAuthEvent.Id()
+	e.AuthorityAddedId = addAuthHash.Hex()
+	if verbose {
+		fmt.Println("added authority id: ", e.AuthorityAddedId)
+	}
+
 	return e
 }
 
+func exists(path string) (bool, error) {
+    _, err := os.Stat(path)
+    if err == nil { return true, nil }
+    if os.IsNotExist(err) { return false, nil }
+    return true, err
+}
+
 func startup(id *big.Int) *big.Int {
+	log_exists, err := exists("log")
+	if err != nil {
+		logger.Error("%s", err)
+	}
+	if !log_exists {
+		logger.Info("creating log/ directory...")	
+		os.Mkdir("./log", os.ModePerm)
+	} 
+
 	path, _ := filepath.Abs("./log/" + id.String() + "_lastblock.txt")
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -146,8 +163,8 @@ func main() {
 	withdrawCommand := flag.NewFlagSet("withrawCommand", flag.ExitOnError)
 
 	/* admin subcommands */
-	// addAuthority := flag.NewFlagSet("addauth", flag.ExitOnError)
-	// removeAuthory := flag.NewFlagSet("removeauth", flag.ExitOnError)
+	addAuthority := flag.NewFlagSet("addauth", flag.ExitOnError)
+	removeAuthory := flag.NewFlagSet("removeauth", flag.ExitOnError)
 
 	// subcommands
 	if len(os.Args) > 1 {
@@ -160,6 +177,10 @@ func main() {
 			payCommand.Parse(os.Args[2:])
 		case "withdraw":
 			withdrawCommand.Parse(os.Args[2:])
+		case "addauth":
+			addAuthority.Parse(os.Args[2:])
+		case "removeauth":
+			removeAuthory.Parse(os.Args[2:])
 		default:
 			// continue
 		}
@@ -342,7 +363,7 @@ func main() {
 		chain.Client = chainClient
 	}
 
-	/* read abi of contract in truffle folder */
+	/* read abi of contract in leth/build */
 	events := readAbi(flags["v"])
 
 	if depositCommand.Parsed() {
@@ -381,6 +402,15 @@ func main() {
 			client.WithdrawToPrompt(chain, ks)
 		}
 		return
+	} else if addAuthority.Parsed() {
+		for _, name := range chains {
+			chain := client.FindChainByName(name, clients)
+			if chain == nil {
+				logger.FatalError("chain not found in config")
+			}
+			client.AddAuthorityPrompt(chain, ks)
+		}
+		return		
 	}
 
 	/* channels */
