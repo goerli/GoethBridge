@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /* BridgeableToken Smart Contract
 *  @noot
@@ -23,7 +23,7 @@ contract BridgeableToken is StandardToken {
 	event Deposit(address _recipient, uint _value, uint _toChain); 
 	event Withdraw(address _recipient, uint _value, uint _fromChain); 
 
-	constructor() {
+	constructor() public {
 		owner = msg.sender;
 		bridge = msg.sender;
 		uint256 initialSupply = 33 ** uint256(decimals);
