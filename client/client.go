@@ -61,7 +61,6 @@ type Events struct {
 }
 
 /****** helpers ********/
-
 // pads zeroes on front of a string until it's 32 bytes or 64 hex characters long
 func padTo32Bytes(s string) (string) {
 	l := len(s)

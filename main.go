@@ -109,7 +109,23 @@ func readAbi(verbose bool) *client.Events {
 	return e
 }
 
+func exists(path string) (bool, error) {
+    _, err := os.Stat(path)
+    if err == nil { return true, nil }
+    if os.IsNotExist(err) { return false, nil }
+    return true, err
+}
+
 func startup(id *big.Int) *big.Int {
+	log_exists, err := exists("log")
+	if err != nil {
+		logger.Error("%s", err)
+	}
+	if !log_exists {
+		logger.Info("creating log/ directory...")	
+		os.Mkdir("./log", os.ModePerm)
+	} 
+
 	path, _ := filepath.Abs("./log/" + id.String() + "_lastblock.txt")
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
