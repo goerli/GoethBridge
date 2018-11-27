@@ -57,8 +57,8 @@ func SendTx(chain *Chain, value *big.Int, data []byte) (common.Hash, error) {
 	return txHash, nil
 }
 
-func SetBridge(chain *Chain) error {
-	dataStr := "8dd14802" + padTo32Bytes(chain.From.Hex()[2:]) // setbridge function signature + contract addr
+func AddAuthority(chain *Chain, address string) error {
+	dataStr := generateSignature("addAuthority(address)") + padTo32Bytes(address[2:]) // setbridge function signature + contract addr
 	data, err := hex.DecodeString(dataStr)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func SetBridge(chain *Chain) error {
 		return err
 	}
 
-	logger.Info("sending tx %s to set bridge on %s...", txHash.Hex(), chain.Name)
+	logger.Info("sending tx %s to add authority on %s...", txHash.Hex(), chain.Name)
 	return nil
 }
 
@@ -120,7 +120,7 @@ func WithdrawTo(chain *Chain, value *big.Int, id string) error {
 
 func Withdraw(chain *Chain, withdrawal *Withdrawal) error {
 	w := setWithdrawalData(withdrawal)
-	dataStr := "4250a6f3" + padTo32Bytes(w.Data) // withdraw function signature + contract addr
+	dataStr := "4250a6f3" + w.Data 
 	data, err := hex.DecodeString(dataStr)
 	if err != nil {
 		return err
