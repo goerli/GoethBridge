@@ -157,7 +157,7 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 			 	} else if strings.Compare(topic, events.CreationId) == 0 {
 					logger.Event("bridge contract creation")
 				} else if strings.Compare(topic, events.WithdrawId) == 0 {
-					logger.Event("withdraw event: tx hash: %s, txHash")
+					logger.Event("withdraw event: tx hash: %s", txHash)
 					printWithdraw(chain, log.TxHash)
 				} else if strings.Compare(topic, events.AuthorityAddedId) == 0 {
 					logger.Event("set bridge event: tx hash: %s", txHash)
