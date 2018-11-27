@@ -54,12 +54,12 @@ func readAbi(verbose bool) *client.Events {
 	path, _ := filepath.Abs("./leth/build/Bridge.abi")
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		fmt.Println("Failed to read file:", err)
+		logger.Error("Failed to read file:", err)
 	}
 
 	bridgeabi, err := abi.JSON(strings.NewReader(string(file)))
 	if err != nil {
-		fmt.Println("Invalid abi:", err)
+		logger.Error("Invalid abi:", err)
 	}
 
 	// checking abi for events
@@ -68,42 +68,49 @@ func readAbi(verbose bool) *client.Events {
 	depositHash := depositEvent.Id()
 	e.DepositId = depositHash.Hex()
 	if verbose {
-		fmt.Println("deposit event id: ", e.DepositId)
+		logger.Info("deposit event id: %s", e.DepositId)
 	}
 
 	creationEvent := bridgeEvents["ContractCreation"]
 	creationHash := creationEvent.Id()
 	e.CreationId = creationHash.Hex()
 	if verbose {
-		fmt.Println("contract creation event id: ", e.CreationId)
+		logger.Info("contract creation event id: %s", e.CreationId)
 	}
 
 	withdrawEvent := bridgeEvents["Withdraw"]
 	withdrawHash := withdrawEvent.Id()
 	e.WithdrawId = withdrawHash.Hex()
 	if verbose {
-		fmt.Println("withdraw event id: ", e.WithdrawId)
+		logger.Info("withdraw event id: %s", e.WithdrawId)
 	}
 
 	bridgeFundedEvent := bridgeEvents["BridgeFunded"]
 	bridgeFundedHash := bridgeFundedEvent.Id()
 	e.BridgeFundedId = bridgeFundedHash.Hex()
 	if verbose {
-		fmt.Println("bridge funded event id: ", e.BridgeFundedId)
+		logger.Info("bridge funded event id: %s", e.BridgeFundedId)
 	}
 
 	paidEvent := bridgeEvents["Paid"]
 	paidHash := paidEvent.Id()
 	e.PaidId = paidHash.Hex()
 	if verbose {
-		fmt.Println("bridge paid event id", e.PaidId)
+		logger.Info("bridge paid event id: %s", e.PaidId)
 	}
 
 	addAuthEvent := bridgeEvents["AuthorityAdded"]
 	addAuthHash := addAuthEvent.Id()
 	e.AuthorityAddedId = addAuthHash.Hex()
 	if verbose {
-		fmt.Println("added authority id: ", e.AuthorityAddedId)
+		logger.Info("added authority id: %s", e.AuthorityAddedId)
+	}
+
+	thresholdEvent := bridgeEvents["ThresholdUpdated"]
+	thresholdHash := thresholdEvent.Id()
+	e.ThresholdUpdated = thresholdHash.Hex()
+	if verbose {
+		logger.Info("threshold updated id: %s", e.ThresholdUpdated)
 	}
 
 	return e
@@ -164,7 +171,9 @@ func main() {
 
 	/* admin subcommands */
 	addAuthority := flag.NewFlagSet("addauth", flag.ExitOnError)
-	removeAuthory := flag.NewFlagSet("removeauth", flag.ExitOnError)
+	removeAuthority := flag.NewFlagSet("removeauth", flag.ExitOnError)
+	increaseThreshold := flag.NewFlagSet("incauth", flag.ExitOnError)
+	decreaseThreshold := flag.NewFlagSet("decauth", flag.ExitOnError)
 
 	// subcommands
 	if len(os.Args) > 1 {
@@ -180,7 +189,11 @@ func main() {
 		case "addauth":
 			addAuthority.Parse(os.Args[2:])
 		case "removeauth":
-			removeAuthory.Parse(os.Args[2:])
+			removeAuthority.Parse(os.Args[2:])
+		case "incauth":
+			increaseThreshold.Parse(os.Args[2:])
+		case "decauth":
+			decreaseThreshold.Parse(os.Args[2:])
 		default:
 			// continue
 		}
@@ -194,12 +207,7 @@ func main() {
 
 	configStr := *configPtr
 	logger.Info("config path: %s", configStr)
-
 	verbose := *verbosePtr
-	if verbose {
-		logger.Info("verbose: %s", verbose)
-	}
-
 	readAll := *readAllPtr
 	if readAll {
 		logger.Info("read from all contracts? %s", readAll)
@@ -411,6 +419,33 @@ func main() {
 			client.AddAuthorityPrompt(chain, ks)
 		}
 		return		
+	} else if removeAuthority.Parsed() {
+		for _, name := range chains {
+			chain := client.FindChainByName(name, clients)
+			if chain == nil {
+				logger.FatalError("chain not found in config")
+			}
+			client.RemoveAuthorityPrompt(chain, ks)
+		}
+		return		
+	} else if increaseThreshold.Parsed() {
+		for _, name := range chains {
+			chain := client.FindChainByName(name, clients)
+			if chain == nil {
+				logger.FatalError("chain not found in config")
+			}
+			client.IncreaseThresholdPrompt(chain, ks)
+		}
+		return		
+	} else if decreaseThreshold.Parsed() {
+		for _, name := range chains {
+			chain := client.FindChainByName(name, clients)
+			if chain == nil {
+				logger.FatalError("chain not found in config")
+			}
+			client.DecreaseThresholdPrompt(chain, ks)
+		}
+		return				
 	}
 
 	/* channels */

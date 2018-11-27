@@ -57,8 +57,9 @@ func SendTx(chain *Chain, value *big.Int, data []byte) (common.Hash, error) {
 	return txHash, nil
 }
 
+/*** admin functions ***/
 func AddAuthority(chain *Chain, address string) error {
-	dataStr := "26defa73" + padTo32Bytes(address) // setbridge function signature + contract addr
+	dataStr := generateSignature("addAuthority(address)") + padTo32Bytes(address[2:])
 	data, err := hex.DecodeString(dataStr)
 	if err != nil {
 		return err
@@ -73,6 +74,55 @@ func AddAuthority(chain *Chain, address string) error {
 	return nil
 }
 
+func RemoveAuthority(chain *Chain, address string) error {
+	dataStr := generateSignature("removeAuthority(address)") + padTo32Bytes(address[2:])
+	data, err := hex.DecodeString(dataStr)
+	if err != nil {
+		return err
+	} 
+
+	txHash, err := SendTx(chain, big.NewInt(0), data)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("sending tx %s to remove authority on %s...", txHash.Hex(), chain.Name)
+	return nil
+}
+
+func IncreaseThreshold(chain *Chain) error {
+	dataStr := generateSignature("increaseThreshold()")
+	data, err := hex.DecodeString(dataStr)
+	if err != nil {
+		return err
+	} 
+
+	txHash, err := SendTx(chain, big.NewInt(0), data)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("sending tx %s to increase threshold on %s...", txHash.Hex(), chain.Name)
+	return nil
+}
+
+func DecreaseThreshold(chain *Chain) error {
+	dataStr := generateSignature("decreaseThreshold()")
+	data, err := hex.DecodeString(dataStr)
+	if err != nil {
+		return err
+	} 
+
+	txHash, err := SendTx(chain, big.NewInt(0), data)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("sending tx %s to decrease threshold on %s...", txHash.Hex(), chain.Name)
+	return nil
+}
+
+/*** bridge functions ***/
 // id is the id of the chain to withdraw the deposit on
 // ids are in hexidecimal
 func Deposit(chain *Chain, value *big.Int, id string) error {

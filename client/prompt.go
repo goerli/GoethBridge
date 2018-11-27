@@ -29,6 +29,57 @@ func AddAuthorityPrompt(chain *Chain, ks *keystore.KeyStore) {
 	AddAuthority(chain, address[2:])
 }
 
+func RemoveAuthorityPrompt(chain *Chain, ks *keystore.KeyStore) {
+	keys = ks
+
+	var address string
+	var confirm int64
+	fmt.Println("removing authority on ", chain.Name)
+	fmt.Println("enter address of authority to remove")
+	fmt.Scanln(&address)
+	if len(address) != 42 { 
+		return
+	}
+
+	fmt.Println("confirm removing authority ", address, "on", chain.Name)
+	fmt.Scanln(&confirm)
+	if confirm == -1 { 
+		return
+	}
+
+	RemoveAuthority(chain, address[2:])
+}
+
+func IncreaseThresholdPrompt(chain *Chain, ks *keystore.KeyStore) {
+	keys = ks
+
+	var address string
+	var confirm int64
+	fmt.Println("increasing authority threshold on ", chain.Name)
+	fmt.Println("confirm authority threshold increase", address, "on", chain.Name)
+	fmt.Scanln(&confirm)
+	if confirm == -1 { 
+		return
+	}
+
+	IncreaseThreshold(chain)
+}
+
+func DecreaseThresholdPrompt(chain *Chain, ks *keystore.KeyStore) {
+	keys = ks
+
+	var address string
+	var confirm int64
+	fmt.Println("decreasing authority threshold on ", chain.Name)
+	fmt.Println("confirm authority threshold decrease", address, "on", chain.Name)
+	fmt.Scanln(&confirm)
+	if confirm == -1 { 
+		return
+	}
+
+	DecreaseThreshold(chain)
+}
+
 /*** bridge functions ***/
 func FundPrompt(chain *Chain, ks *keystore.KeyStore) {
 	keys = ks

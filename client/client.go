@@ -58,6 +58,7 @@ type Events struct {
 	PaidId string
 	AuthorityAddedId string
 	AuthorityRemovedId string
+	ThresholdUpdated string
 }
 
 /****** helpers ********/
@@ -146,8 +147,8 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 			logger.Event("logs found on %s at block %d", chain.Name, log.BlockNumber)
 			logger.Event("contract address: %s", log.Address.Hex())
 
-			for _, topics := range log.Topics {
-				topic := topics.Hex()
+			for _, _topic := range log.Topics {
+				topic := _topic.Hex()
 				if strings.Compare(topic, events.DepositId) == 0 { 
 					logger.Event("deposit event: tx hash: %s", txHash)
 					withdrawDone := make(chan bool)
@@ -164,6 +165,9 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 					logger.Event("funded bridge event: tx hash: %s", txHash)
 				} else if strings.Compare(topic, events.PaidId) == 0 {
 					logger.Event("bridge paid event: tx hash: %s", txHash)
+				} else if strings.Compare(topic, events.ThresholdUpdated) == 0 {
+					logger.Event("threshold updated event: tx hash: %s", txHash)
+					logger.Event("threshold: %s", log.Topics[1])
 				}
 			}
 		}
