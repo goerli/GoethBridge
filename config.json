@@ -54,13 +54,6 @@
 			"url": "https://kovan.infura.io",
 			"contractAddr": "0x42ad30c467746e5790cc8944f9c6b4098cab85a5",
 			"gasPrice": 100000000,
-			"from": "0x83a8e0bd54ff6dc11da80151563b8150534280be"
-		},
-		"rsk": {
-			"id": 31,
-			"url": "https://public-node.testnet.rsk.co",
-			"contractAddr": "0x00",
-			"gasPrice": 100000000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 		}
 	}

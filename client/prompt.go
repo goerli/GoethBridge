@@ -26,7 +26,7 @@ func AddAuthorityPrompt(chain *Chain, ks *keystore.KeyStore) {
 		return
 	}
 
-	AddAuthority(chain, address)
+	AddAuthority(chain, address[2:])
 }
 
 /*** bridge functions ***/

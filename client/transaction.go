@@ -57,8 +57,8 @@ func SendTx(chain *Chain, value *big.Int, data []byte) (common.Hash, error) {
 	return txHash, nil
 }
 
-func SetBridge(chain *Chain) error {
-	dataStr := "8dd14802" + padTo32Bytes(chain.From.Hex()[2:]) // setbridge function signature + contract addr
+func AddAuthority(chain *Chain, address string) error {
+	dataStr := "26defa73" + padTo32Bytes(address) // setbridge function signature + contract addr
 	data, err := hex.DecodeString(dataStr)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func SetBridge(chain *Chain) error {
 		return err
 	}
 
-	logger.Info("sending tx %s to set bridge on %s...", txHash.Hex(), chain.Name)
+	logger.Info("sending tx %s to add authority 0x%s on %s...", txHash.Hex(), address, chain.Name)
 	return nil
 }
 

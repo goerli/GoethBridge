@@ -103,7 +103,7 @@ func readAbi(verbose bool) *client.Events {
 	addAuthHash := addAuthEvent.Id()
 	e.AuthorityAddedId = addAuthHash.Hex()
 	if verbose {
-		fmt.Println("added authority id: ", e.addAuthId)
+		fmt.Println("added authority id: ", e.AuthorityAddedId)
 	}
 
 	return e
