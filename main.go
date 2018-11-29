@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
+	//"log"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -16,7 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
+	//"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/ChainSafeSystems/ChainBridge/client"
 	"github.com/ChainSafeSystems/ChainBridge/logger"
@@ -127,6 +127,7 @@ func readAbi(verbose bool) *client.Events {
 	return e
 }
 
+// check if a file or directory exists
 func exists(path string) (bool, error) {
     _, err := os.Stat(path)
     if err == nil { return true, nil }
@@ -134,6 +135,8 @@ func exists(path string) (bool, error) {
     return true, err
 }
 
+// read last blocks for each chain from log/ directory. 
+// if log/ directory does not exist, create it.
 func startup(id *big.Int) *big.Int {
 	log_exists, err := exists("log")
 	if err != nil {
@@ -174,6 +177,7 @@ func main() {
 	passwordPtr := flag.String("password", "password", "a string of the password to the account specified in the config file")
 	noListenPtr := flag.Bool("no-listen", false, "a bool; if true, do not start the listener")
 
+	// TODO: change these to flags. clean up flags.
 	/* bridge subcommands */
 	depositCommand := flag.NewFlagSet("deposit", flag.ExitOnError)
 	fundCommand := flag.NewFlagSet("fund", flag.ExitOnError)
@@ -365,18 +369,19 @@ func main() {
 		// }
 	}
 
-	for _, chain := range clients {
-		/* dial client */
-		chainClient, err := ethclient.Dial(chain.Url)
-		if err != nil {
-			log.Fatal(err)
-		}
-		chain.Client = chainClient
-	}
+	// for _, chain := range clients {
+	// 	/* dial client */
+	// 	chainClient, err := ethclient.Dial(chain.Url)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	chain.Client = chainClient
+	// }
 
 	/* read abi of contract in leth/build */
 	events := readAbi(flags["v"])
 
+	// change these to functions
 	if depositCommand.Parsed() {
 		for _, name := range chains {
 			chain := client.FindChainByName(name, clients)

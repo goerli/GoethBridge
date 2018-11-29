@@ -161,7 +161,9 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 					logger.Event("withdraw event: tx hash: %s", txHash)
 					printWithdraw(chain, log.TxHash)
 				} else if strings.Compare(topic, events.AuthorityAddedId) == 0 {
-					logger.Event("set bridge event: tx hash: %s", txHash)
+					logger.Event("authority added event: tx hash: %s", txHash)
+				} else if strings.Compare(topic, events.AuthorityRemovedId) == 0 {
+					logger.Event("authority removed event: tx hash: %s", txHash)
 				} else if strings.Compare(topic, events.BridgeFundedId) == 0 {
 					logger.Event("funded bridge event: tx hash: %s", txHash)
 				} else if strings.Compare(topic, events.PaidId) == 0 {
