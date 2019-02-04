@@ -14,7 +14,7 @@ func TestReadAbi(t *testing.T) {
 	expected := &client.Events{
 		DepositId: common.BytesToHash(crypto.Keccak256([]byte(fmt.Sprint("Deposit(address,uint256,uint256)")))).Hex(),
 		CreationId: common.BytesToHash(crypto.Keccak256([]byte(fmt.Sprint("ContractCreation(address)")))).Hex(),
-		WithdrawId: common.BytesToHash(crypto.Keccak256([]byte(fmt.Sprint("Withdraw(address,uint256,uint256)")))).Hex(),
+		WithdrawId: common.BytesToHash(crypto.Keccak256([]byte(fmt.Sprint("Withdraw(address,uint256,uint256,bytes32)")))).Hex(),
 		BridgeFundedId: common.BytesToHash(crypto.Keccak256([]byte(fmt.Sprint("BridgeFunded(address)")))).Hex(),
 		PaidId: common.BytesToHash(crypto.Keccak256([]byte(fmt.Sprint("Paid(address,uint256)")))).Hex(),
 	}
