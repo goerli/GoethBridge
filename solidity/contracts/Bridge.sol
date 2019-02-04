@@ -30,8 +30,8 @@ contract Bridge {
 	event AuthorityRemoved(address _addr);
 	event ThresholdUpdated(uint256 _threshold);
 
-	event Deposit(address _recipient, uint _value, uint _toChain); 
-	event Withdraw(address _recipient, uint _value, uint _fromChain); 
+	event Deposit(address _recipient, uint _value, uint _toChain);
+	event Withdraw(address _recipient, uint _value, uint _fromChain, bytes32 _txHash);
 	event SignedForWithdraw(bytes32 _txHash, address _authority);
 
 	constructor() public {
@@ -113,7 +113,7 @@ contract Bridge {
 		// if enough authorities have signed, execute the withdraw
 		if(withdrawal[_txHash] >= threshold) {
 			_recipient.transfer(_value);
-			emit Withdraw(_recipient, _value, _fromChain);
+			emit Withdraw(_recipient, _value, _fromChain, _txHash);
 		}
 	}
 }

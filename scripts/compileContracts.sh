@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-solc \
+solcjs \
   --abi \
-  --bin \
   --optimize \
-  --output-dir compiled_contracts \
+  --output-dir ../solidity/build \
   --overwrite \
-  contracts/bridge.sol
+  ../solidity/contracts/Bridge.sol

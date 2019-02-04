@@ -51,7 +51,7 @@ func readAbi(verbose bool) *client.Events {
 	e := new(client.Events)
 
 	// read bridge contract abi
-	path, _ := filepath.Abs("./leth/build/Bridge.abi")
+	path, _ := filepath.Abs("./solidity/build/contracts_Bridge_sol_Bridge.abi")
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
 		fmt.Println("Failed to read file:", err)
