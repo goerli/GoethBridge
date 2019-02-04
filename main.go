@@ -41,12 +41,14 @@ type Chain struct {
 	StartBlock int      `json:"startBlock,omitempty"`
 }
 
-/****** keystore methods ******/
+// NewKeyStore creates a general keystore at given path
 func newKeyStore(path string) *keystore.KeyStore {
 	newKeyStore := keystore.NewKeyStore(path, keystore.StandardScryptN, keystore.StandardScryptP)
 	return newKeyStore
 }
 
+
+// ReadAbi parses leth/build/Bridge.abi for events and stores the keccak hash of each in an Event struct
 func readAbi(verbose bool) *client.Events {
 	e := new(client.Events)
 
@@ -117,13 +119,16 @@ func exists(path string) (bool, error) {
 }
 
 func startup(id *big.Int) *big.Int {
-	log_exists, err := exists("log")
+	logExists, err := exists("log")
 	if err != nil {
 		logger.Error("%s", err)
 	}
-	if !log_exists {
+	if !logExists {
 		logger.Info("creating log/ directory...")	
-		os.Mkdir("./log", os.ModePerm)
+		err = os.Mkdir("./log", os.ModePerm)
+		if err != nil {
+			logger.Error(err.Error())
+		}
 	} 
 
 	path, _ := filepath.Abs("./log/" + id.String() + "_lastblock.txt")
@@ -197,12 +202,12 @@ func main() {
 
 	verbose := *verbosePtr
 	if verbose {
-		logger.Info("verbose: %s", verbose)
+		logger.Info("verbose: %t", verbose)
 	}
 
 	readAll := *readAllPtr
 	if readAll {
-		logger.Info("read from all contracts? %s", readAll)
+		logger.Info("read from all contracts? %t", readAll)
 	}
 
 	keystorePath := *keysPtr
@@ -225,10 +230,8 @@ func main() {
 
 	var chains []string
 
-	/*
-	  Loop through arguments for the subcommand that is parsed, extract the password for either format --password="pass" or --password pass
-	  Return the paramester before the index of the password -> [chains]
-	*/
+	// Loop through arguments for the subcommand that is parsed, extract the password for either format --password="pass"
+	// or --password pass return the parameter before the index of the password -> [chains]
 	var commandsNotParsed = 0
 
 	for commandIndex, subCommand := range isSubCommandParsed {
