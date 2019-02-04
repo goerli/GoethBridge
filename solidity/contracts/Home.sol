@@ -1,9 +1,8 @@
 pragma solidity ^0.5.0;
 
-/* Bridge Smart Contract 
-* @noot
-* to be deployed on Goerli
-*/
+/*
+ * To be deployed on the network you are bridging into (Foreign => Home).
+ */
 
 contract Home {
 	address public owner;
@@ -14,7 +13,7 @@ contract Home {
 	event ContractCreation(address _owner);
 	event BridgeSet(address _addr);
 	event BridgeFunded(address _addr);
-	event Withdraw(address _recipient, uint _value, uint _fromChain); 
+	event Withdraw(address _recipient, uint _value, uint _fromChain, bytes32 _txHash);
 
 	constructor() public {
 		owner = msg.sender;
@@ -46,6 +45,6 @@ contract Home {
 		require(!withdrawSubmitted[_txHash]);
 		withdrawSubmitted[_txHash] = true;
 		_recipient.transfer(_value);
-		emit Withdraw(_recipient, _value, _fromChain);
+		emit Withdraw(_recipient, _value, _fromChain, _txHash);
 	}
 }

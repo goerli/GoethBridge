@@ -1,19 +1,18 @@
 pragma solidity ^0.5.0;
 
-/* Bridge Smart Contract 
-* @noot
-* to be deployed on ropsten, rinkeby, and kovan.
-*/
+/*
+ * To be deployed on the network you are bridging out of (Foreign => Home).
+ */
 
 contract Foreign {
 
-	uint256 constant maxDeposit = 100 ether;
+	uint256 constant MAX_DEPOSIT = 100 ether;
 
 	mapping(address => uint256) deposited; // how much ether that was deposited today
 	mapping(address => uint256) depositTime; // time from their first deposit today
 
 	event ContractCreation(address _owner);
-	event Deposit(address _recipient, uint _value, uint _toChain); 
+	event Deposit(address _recipient, uint _value, uint _toChain);
 
 	constructor() public {
 		emit ContractCreation(msg.sender);
@@ -27,7 +26,7 @@ contract Foreign {
 		}
 
 		// cannot deposit more than the maximum in one day
-		require(deposited[msg.sender] + msg.value < maxDeposit);
+		require(deposited[msg.sender] + msg.value < MAX_DEPOSIT, "Exceeds daily maximum.");
 
 		// burn ether, update deposit balance for today, and emit event for bridge
 		address(0).transfer(msg.value);
