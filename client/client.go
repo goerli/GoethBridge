@@ -55,7 +55,6 @@ type Events struct {
 	DepositId string
   	CreationId string
  	WithdrawId string
-	BridgeSetId string
 	BridgeFundedId string
 	PaidId string
 }
@@ -156,8 +155,6 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 				} else if strings.Compare(topic, events.WithdrawId) == 0 {
 					logger.Event("withdraw event: tx hash: %s", txHash)
 					printWithdraw(chain, log.TxHash)
-				} else if strings.Compare(topic, events.BridgeSetId) == 0 {
-					logger.Event("set bridge event: tx hash: %s", txHash)
 				} else if strings.Compare(topic, events.BridgeFundedId) == 0 {
 					logger.Event("funded bridge event: tx hash: %s", txHash)
 				} else if strings.Compare(topic, events.PaidId) == 0 {
