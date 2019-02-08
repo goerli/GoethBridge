@@ -19,6 +19,7 @@ contract Foreign {
 
 	event ContractCreation(address _owner);
 	event Deposit(address _recipient, uint _value, uint _toChain);
+	event Withdraw(uint256 _amount);
 
 	constructor() public {
 	    owner = msg.sender;
@@ -46,8 +47,7 @@ contract Foreign {
 		// cannot deposit more than the maximum in one day
 		require(deposited[msg.sender] + msg.value < MAX_DEPOSIT, "Exceeds daily maximum.");
 
-		// burn ether, update deposit balance for today, and emit event for bridge
-		address(0).transfer(msg.value);
+		// update deposit balance for account for today, and emit event for bridge
 		deposited[msg.sender] += msg.value;
 		emit Deposit(_recipient, msg.value, _toChain);
 	}
@@ -56,6 +56,7 @@ contract Foreign {
 	    require(msg.sender == owner);
 	    require(_amount <= address(this).balance);
 	    owner.transfer(_amount);
+	    emit Withdraw(_amount);
 	    return true;
 	}
 }
