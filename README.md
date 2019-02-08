@@ -1,9 +1,9 @@
-# Multi Directional Bridge
+# ChainBridge 
 
-this is a go implementation of a generic bridge between blockchains. the bridge will be able to connect any networks using native fuel or any token.
+This is a go implementation of a generic bridge between blockchains. The bridge will be able to connect any networks using native fuel or any token.
 
 ### todo
-* implement support for non EVM based blockchains
+* implement support for non EVM based blockchains	
 
 ### requirements
 go 1.9.1
@@ -25,6 +25,7 @@ solcjs --abi contracts/Bridge.sol -o build
 ```
 
 # to run
+#### generic instructions for bridge, needs to be updated!
 ```
 cd $GOPATH/src/github.com/ChainSafeSystems/ChainBridge
 go build && go install
