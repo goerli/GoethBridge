@@ -93,7 +93,7 @@ func setWithdrawalData(w *Withdrawal) (*Withdrawal) {
 	if len(valueString) != 64 {
 		logger.Warn("value formatted incorrectly")
 	}
-	w.Data = w.Recipient + valueString + w.FromChain + w.TxHash
+	w.Data = padTo32Bytes(w.Recipient) + valueString + w.FromChain + w.TxHash
 	return w
 }
 
