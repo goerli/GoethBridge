@@ -382,11 +382,12 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 			blockNum, err := getBlockNumber(chain.Url)
 			if err != nil {
 				logger.Error("getBlockNumber error: %s", err)
+			} else {
+				fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
 			}
 			if flags["v"] { 
 				logger.Info("latest block on %s: %s", chain.Name, blockNum) 
 			}
-			fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
 		} else if fromBlock != block.Number() {
 			if err != nil { 
 				logger.Error("%s", err) 
