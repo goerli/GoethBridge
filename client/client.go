@@ -232,13 +232,13 @@ func FundPrompt(chain *Chain, ks *keystore.KeyStore) {
 	var confirm int64
 	fmt.Println("\nfunding the bridge contract on chain", chain.Id)
 	fmt.Println("note that funding of the bridge cannot be withdrawn")
-	fmt.Println("enter value of funding, in wei")
+	fmt.Println("enter value of funding, in ether")
 	fmt.Scanln(&value)
 	if value == -1 { 
 		return
 	}
 	valBig := big.NewInt(value)
-	fmt.Println("confirm funding on chain", chain.Id, "with value", value, "wei")
+	fmt.Println("confirm funding on chain", chain.Id, "with value", value, "ether")
 	fmt.Scanln(&confirm)
 	if confirm == -1 { 
 		return
