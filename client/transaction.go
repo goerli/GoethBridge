@@ -136,12 +136,15 @@ func Withdraw(chain *Chain, withdrawal *Withdrawal) error {
 }
 
 func FundBridge(chain *Chain, value *big.Int) error {
+	weiValue := big.NewInt(0)
+	weiConversion := big.NewInt(0)
+	weiValue.Mul(value, weiConversion.Exp(big.NewInt(10), big.NewInt(18), nil))
 	data, err := hex.DecodeString("c9c0909f") //fund me function sig
 	if err != nil {
 		return err
 	} 
 
-	txHash, err := SendTx(chain, value, data)
+	txHash, err := SendTx(chain, weiValue, data)
 	if err != nil {
 		return err
 	}	
