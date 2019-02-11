@@ -1,19 +1,34 @@
 // Code generated - DO NOT EDIT.
 // This file is a generated binding and any manual changes will be lost.
 
-package bindings
+package homecontract
 
 import (
 	"math/big"
 	"strings"
 
-	"github.com/ShyftNetwork/go-empyrean/event"
 	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/event"
+)
+
+// Reference imports to suppress errors if they are not otherwise used.
+var (
+	_ = big.NewInt
+	_ = strings.NewReader
+	_ = ethereum.NotFound
+	_ = abi.U256
+	_ = bind.Bind
+	_ = common.Big1
+	_ = types.BloomLookup
+	_ = event.NewSubscription
 )
 
 // HomeABI is the input ABI used to generate the binding from.
-const HomeABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"_recipient\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"},{\"name\":\"_fromChain\",\"type\":\"uint256\"},{\"name\":\"_txHash\",\"type\":\"bytes32\"}],\"name\":\"withdraw\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"setBridge\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"bridge\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"ContractCreation\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"BridgeSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"BridgeFunded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_recipient\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_value\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"_fromChain\",\"type\":\"uint256\"}],\"name\":\"Withdraw\",\"type\":\"event\"}]"
+const HomeABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"_recipient\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"},{\"name\":\"_fromChain\",\"type\":\"uint256\"},{\"name\":\"_txHash\",\"type\":\"bytes32\"}],\"name\":\"withdraw\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"setBridge\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"bridge\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"ContractCreation\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"BridgeSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"BridgeFunded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_recipient\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_value\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"_fromChain\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"_txHash\",\"type\":\"bytes32\"}],\"name\":\"Withdraw\",\"type\":\"event\"}]"
 
 // Home is an auto generated Go binding around an Ethereum contract.
 type Home struct {
@@ -689,12 +704,13 @@ type HomeWithdraw struct {
 	Recipient common.Address
 	Value     *big.Int
 	FromChain *big.Int
+	TxHash    [32]byte
 	Raw       types.Log // Blockchain specific contextual infos
 }
 
-// FilterWithdraw is a free log retrieval operation binding the contract event 0xf279e6a1f5e320cca91135676d9cb6e44ca8a08c0b88342bcdb1144f6511b568.
+// FilterWithdraw is a free log retrieval operation binding the contract event 0x80bd7e915c065f64ef8e41fa6334d4a2b752591cb4d462c204b8e2449eb0a1f7.
 //
-// Solidity: e Withdraw(_recipient address, _value uint256, _fromChain uint256)
+// Solidity: e Withdraw(_recipient address, _value uint256, _fromChain uint256, _txHash bytes32)
 func (_Home *HomeFilterer) FilterWithdraw(opts *bind.FilterOpts) (*HomeWithdrawIterator, error) {
 
 	logs, sub, err := _Home.contract.FilterLogs(opts, "Withdraw")
@@ -704,9 +720,9 @@ func (_Home *HomeFilterer) FilterWithdraw(opts *bind.FilterOpts) (*HomeWithdrawI
 	return &HomeWithdrawIterator{contract: _Home.contract, event: "Withdraw", logs: logs, sub: sub}, nil
 }
 
-// WatchWithdraw is a free log subscription operation binding the contract event 0xf279e6a1f5e320cca91135676d9cb6e44ca8a08c0b88342bcdb1144f6511b568.
+// WatchWithdraw is a free log subscription operation binding the contract event 0x80bd7e915c065f64ef8e41fa6334d4a2b752591cb4d462c204b8e2449eb0a1f7.
 //
-// Solidity: e Withdraw(_recipient address, _value uint256, _fromChain uint256)
+// Solidity: e Withdraw(_recipient address, _value uint256, _fromChain uint256, _txHash bytes32)
 func (_Home *HomeFilterer) WatchWithdraw(opts *bind.WatchOpts, sink chan<- *HomeWithdraw) (event.Subscription, error) {
 
 	logs, sub, err := _Home.contract.WatchLogs(opts, "Withdraw")

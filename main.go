@@ -41,89 +41,72 @@ type Chain struct {
 	StartBlock int      `json:"startBlock,omitempty"`
 }
 
-/****** keystore methods ******/
+// NewKeyStore creates a general keystore at given path
 func newKeyStore(path string) *keystore.KeyStore {
-	newKeyStore := keystore.NewKeyStore(path, keystore.StandardScryptN, keystore.StandardScryptP)
-	return newKeyStore
+	return keystore.NewKeyStore(path, keystore.StandardScryptN, keystore.StandardScryptP)
 }
 
+// ReadAbi parses solidity/Bridge/build/Bridge.abi for events and stores the keccak hash of each in an Event struct
 func readAbi(verbose bool) *client.Events {
 	e := new(client.Events)
 
 	// read bridge contract abi
-	path, _ := filepath.Abs("./leth/build/Bridge.abi")
+	path, _ := filepath.Abs("./solidity/Bridge/build/contracts_Bridge_sol_Bridge.abi")
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		fmt.Println("Failed to read file:", err)
+		logger.Warn("Failed to read file: %s: will try to read solidity/build/Bridge.abi", err)
+		path, _ = filepath.Abs("./solidity/Bridge/build/Bridge.abi")
+		file, err = ioutil.ReadFile(path)
+		if err != nil {
+			logger.FatalError("Failed to read file: %s", err)
+		}
 	}
 
 	bridgeabi, err := abi.JSON(strings.NewReader(string(file)))
 	if err != nil {
-		fmt.Println("Invalid abi:", err)
+		logger.FatalError("Invalid abi: %s", err)
 	}
 
 	// checking abi for events
 	bridgeEvents := bridgeabi.Events
-	depositEvent := bridgeEvents["Deposit"]
-	depositHash := depositEvent.Id()
-	e.DepositId = depositHash.Hex()
-	if verbose {
-		fmt.Println("deposit event id: ", e.DepositId)
-	}
 
-	creationEvent := bridgeEvents["ContractCreation"]
-	creationHash := creationEvent.Id()
-	e.CreationId = creationHash.Hex()
-	if verbose {
-		fmt.Println("contract creation event id: ", e.CreationId)
-	}
-
-	withdrawEvent := bridgeEvents["Withdraw"]
-	withdrawHash := withdrawEvent.Id()
-	e.WithdrawId = withdrawHash.Hex()
-	if verbose {
-		fmt.Println("withdraw event id: ", e.WithdrawId)
-	}
-
-	bridgeFundedEvent := bridgeEvents["BridgeFunded"]
-	bridgeFundedHash := bridgeFundedEvent.Id()
-	e.BridgeFundedId = bridgeFundedHash.Hex()
-	if verbose {
-		fmt.Println("bridge funded event id: ", e.BridgeFundedId)
-	}
-
-	paidEvent := bridgeEvents["Paid"]
-	paidHash := paidEvent.Id()
-	e.PaidId = paidHash.Hex()
-	if verbose {
-		fmt.Println("bridge paid event id", e.PaidId)
-	}
-
-	// addAuthEvent := bridgeEvents["AuthorityAdded"]
-	// addAuthHash := addAuthEvent.Id()
-	// e.AuthorityAddedId = addAuthHash.Hex()
-	// if verbose {
-	// 	fmt.Println("added authority id: ", e.AuthorityAddedId)
-	// }
+	// save event Ids which will be what we check for in event topics
+	e.DepositId = bridgeEvents["Deposit"].Id().Hex()
+	e.CreationId = bridgeEvents["ContractCreation"].Id().Hex()
+	e.WithdrawId = bridgeEvents["Withdraw"].Id().Hex()
+	e.BridgeFundedId = bridgeEvents["BridgeFunded"].Id().Hex()
+	e.PaidId = bridgeEvents["Paid"].Id().Hex()
+	// e.AuthorityAddedId = bridgeEvents["AuthorityAdded"].Id().Hex()
 
 	return e
 }
 
+// check if file or directory at path exists
 func exists(path string) (bool, error) {
-    _, err := os.Stat(path)
-    if err == nil { return true, nil }
-    if os.IsNotExist(err) { return false, nil }
-    return true, err
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
 }
 
+// create log/ directory if it does not exist
+// will store the latest block number read
 func startup(id *big.Int) *big.Int {
-	log_exists, err := exists("log")
+	logExists, err := exists("log")
 	if err != nil {
 		logger.Error("%s", err)
 	}
-	if !log_exists {
+
+	if !logExists {
 		logger.Info("creating log/ directory...")	
-		os.Mkdir("./log", os.ModePerm)
+		err = os.Mkdir("./log", os.ModePerm)
+		if err != nil {
+			logger.Error(err.Error())
+		}
 	} 
 
 	path, _ := filepath.Abs("./log/" + id.String() + "_lastblock.txt")
@@ -148,7 +131,7 @@ func printHeader() {
 func main() {
 	/* flags */
 	headerPtr := flag.Bool("header", true, "a bool representing whether to print out the header or not")
-	verbosePtr := flag.Bool("v", false, "a bool representing verbosity of output")
+	verbosePtr := flag.Bool("v", false, "increase verbosity of output")
 	readAllPtr := flag.Bool("a", false, "a bool representing whether to read logs from every contract or not")
 	configPtr := flag.String("config", "./config.json", "a string of the path to the config file")
 	keysPtr := flag.String("keystore", "./keystore", "a string of the path to the keystore directory")
@@ -197,12 +180,12 @@ func main() {
 
 	verbose := *verbosePtr
 	if verbose {
-		logger.Info("verbose: %s", verbose)
+		logger.Info("verbose: %t", verbose)
 	}
 
 	readAll := *readAllPtr
 	if readAll {
-		logger.Info("read from all contracts? %s", readAll)
+		logger.Info("read from all contracts? %t", readAll)
 	}
 
 	keystorePath := *keysPtr
@@ -225,10 +208,8 @@ func main() {
 
 	var chains []string
 
-	/*
-	  Loop through arguments for the subcommand that is parsed, extract the password for either format --password="pass" or --password pass
-	  Return the paramester before the index of the password -> [chains]
-	*/
+	// Loop through arguments for the subcommand that is parsed, extract the password for either format --password="pass"
+	// or --password pass return the parameter before the index of the password -> [chains]
 	var commandsNotParsed = 0
 
 	for commandIndex, subCommand := range isSubCommandParsed {
@@ -410,7 +391,7 @@ func main() {
 			}
 			//client.AddAuthorityPrompt(chain, ks)
 		}
-		return		
+		return
 	}
 
 	/* channels */

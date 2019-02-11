@@ -55,7 +55,6 @@ type Events struct {
 	DepositId string
   	CreationId string
  	WithdrawId string
-	BridgeSetId string
 	BridgeFundedId string
 	PaidId string
 }
@@ -94,7 +93,7 @@ func setWithdrawalData(w *Withdrawal) (*Withdrawal) {
 	if len(valueString) != 64 {
 		logger.Warn("value formatted incorrectly")
 	}
-	w.Data = w.Recipient + valueString + w.FromChain + w.TxHash
+	w.Data = padTo32Bytes(w.Recipient) + valueString + w.FromChain + w.TxHash
 	return w
 }
 
@@ -156,8 +155,6 @@ func ReadLogs(chain *Chain, allChains []*Chain, logs []types.Log, logsDone chan 
 				} else if strings.Compare(topic, events.WithdrawId) == 0 {
 					logger.Event("withdraw event: tx hash: %s", txHash)
 					printWithdraw(chain, log.TxHash)
-				} else if strings.Compare(topic, events.BridgeSetId) == 0 {
-					logger.Event("set bridge event: tx hash: %s", txHash)
 				} else if strings.Compare(topic, events.BridgeFundedId) == 0 {
 					logger.Event("funded bridge event: tx hash: %s", txHash)
 				} else if strings.Compare(topic, events.PaidId) == 0 {
@@ -235,13 +232,13 @@ func FundPrompt(chain *Chain, ks *keystore.KeyStore) {
 	var confirm int64
 	fmt.Println("\nfunding the bridge contract on chain", chain.Id)
 	fmt.Println("note that funding of the bridge cannot be withdrawn")
-	fmt.Println("enter value of funding, in wei")
+	fmt.Println("enter value of funding, in ether")
 	fmt.Scanln(&value)
 	if value == -1 { 
 		return
 	}
 	valBig := big.NewInt(value)
-	fmt.Println("confirm funding on chain", chain.Id, "with value", value, "wei")
+	fmt.Println("confirm funding on chain", chain.Id, "with value", value, "ether")
 	fmt.Scanln(&confirm)
 	if confirm == -1 { 
 		return
@@ -385,11 +382,12 @@ func Listen(chain *Chain, ac []*Chain, e *Events, doneClient chan bool, ks *keys
 			blockNum, err := getBlockNumber(chain.Url)
 			if err != nil {
 				logger.Error("getBlockNumber error: %s", err)
+			} else {
+				fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
 			}
 			if flags["v"] { 
 				logger.Info("latest block on %s: %s", chain.Name, blockNum) 
 			}
-			fromBlock, _ = new(big.Int).SetString(blockNum[2:], 16)
 		} else if fromBlock != block.Number() {
 			if err != nil { 
 				logger.Error("%s", err) 
