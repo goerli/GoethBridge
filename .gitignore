@@ -1,3 +1,4 @@
-log/*
-keystore/*
-leth/build/
+log/
+keystore/
+solidity/build/
+.idea/
