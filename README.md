@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # GöethBridge
 
 This is a go implementation of a generic bridge between blockchains. Made specifically to allow testnet eth from rinkeby, kovan, and ropsten to be burned for Göeth (Görli eth). 
