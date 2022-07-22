@@ -4,14 +4,14 @@
 			"id": 0,
 			"url": "https://mew.epool.io",
 			"contractAddr": "0xbF1B0b4dAebb78b65e842716936d68F178d5e8D1",
-			"gasPrice": 100000000,
+			"gasPrice": 26000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"	
 		},
 		"homestead": {
 			"id": 1,
 			"url": "https://mainnet.infura.io",
 			"contractAddr": "0xbF1B0b4dAebb78b65e842716936d68F178d5e8D1",
-			"gasPrice": 100000000,
+			"gasPrice": 26000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 		},
 		"morden": {
@@ -74,7 +74,7 @@
 			"id": 1,
 			"url": "https://mainnet.infura.io",
 			"contractAddr": "0xc7711f36b2C13E00821fFD9EC54B04A60AEfbd1b",
-			"gasPrice": 100000000,
+			"gasPrice": 26000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 	},
 }
