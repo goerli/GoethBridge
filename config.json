@@ -3,65 +3,78 @@
 		"etc": {
 			"id": 0,
 			"url": "https://mew.epool.io",
-			"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+			"contractAddr": "0xbF1B0b4dAebb78b65e842716936d68F178d5e8D1",
 			"gasPrice": 100000000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"	
 		},
 		"homestead": {
 			"id": 1,
 			"url": "https://mainnet.infura.io",
-			"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
+			"contractAddr": "0xbF1B0b4dAebb78b65e842716936d68F178d5e8D1",
 			"gasPrice": 100000000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 		},
 		"morden": {
 			"id": 2,
-			"url": "https://testnet.epool.io/",
-			"contractAddr": "0x288a9fb92921472d29ab0b3c3e420a8e4bd4f452",
-			"gasPrice": 100000000,
+			"url": "https://VXnet.epool.io/",
+			"contractAddr": "0xbF1B0b4dAebb78b65e842716936d68F178d5e8D1",
+			"gasPrice": 27000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 		},
 		"ropsten": {
 			"id": 3,
 			"url": "https://ropsten.infura.io",
-			"contractAddr": "0x51F4A0f0D3bf30600d07396dAde1eE2e4Bca9b5e",
-			"gasPrice": 100000000,
+			"contractAddr": "0xbF1B0b4dAebb78b65e842716936d68F178d5e8D1",
+			"gasPrice": 27000,
 			"from": "0xc7756f27d7f8c2e45d790bfd340a4ab73b4a6e95"
 		},
 		"rinkeby": {
 			"id": 4,
 			"url": "https://rinkeby.infura.io",
-			"contractAddr": "0xc17B3D931545558B213A322f3A4842F488d382b8",
-			"gasPrice": 100000000,
+			"contractAddr": "0xbF1B0b4dAebb78b65e842716936d68F178d5e8D1",
+			"gasPrice": 270000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
 		},
-		"testnet": {
-			"id": 1337,
-			"url": "http://127.0.0.1:8545",
-			"contractAddr": "0xb63FB10A550d3d4a8e0d8a82672b43A96fc78d41",
-			"gasPrice": 100000000,
+		"VersoriumX": {
+			"id": 1,
+			"url": "http://107.5.111.63:8545",
+			"contractAddr": "0xbF1B0b4dAebb78b65e842716936d68F178d5e8D1",
+			"gasPrice": 26000,
 			"from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30"
 		},
-		"testnet2": {
-			"id": 1338,
-			"url": "http://127.0.0.1:7545",
-			"contractAddr": "0x62de05f10E1e825EfBFd4A45A1a9EA666D4c8A40",
-			"gasPrice": 100000000,
+		"VXnet2": {
+			"id": 137,
+			"url": "http://107.5.111.63:7545",
+			"contractAddr": "0xbF1B0b4dAebb78b65e842716936d68F178d5e8D1",
+			"gasPrice": 27000,
 			"from": "0x8f9b540b19520f8259115a90e4b4ffaeac642a30"
 		},
 		"kovan": {
 			"id": 42,
 			"url": "https://kovan.infura.io",
-			"contractAddr": "0x42ad30c467746e5790cc8944f9c6b4098cab85a5",
-			"gasPrice": 100000000,
+			"contractAddr": "0xc7711f36b2C13E00821fFD9EC54B04A60AEfbd1b",
+			"gasPrice": 27000,
 			"from": "0x83a8e0bd54ff6dc11da80151563b8150534280be"
 		},
 		"rsk": {
-			"id": 31,
-			"url": "https://public-node.testnet.rsk.co",
-			"contractAddr": "0x00",
+			"id": 69,
+			"url": "https://public-node.VersoriumX.rsk.co",
+			"contractAddr": "0xD8f3249e8702c4E950b2E0e9739eB46326D28055",
+			"gasPrice": 27000,
+			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
+		},
+		"Optomistic-Ethereum": {
+			"id": 10,
+			"url": "https://mainnet.optimism.io",
+			"contractAddr": "0xc7711f36b2C13E00821fFD9EC54B04A60AEfbd1b",
+			"gasPrice": 27000,
+			"from": "0xc7756f27d7f8c2e45d790bfd340a4ab73b4a6e95"
+		},
+		"homestead": {
+			"id": 1,
+			"url": "https://mainnet.infura.io",
+			"contractAddr": "0xc7711f36b2C13E00821fFD9EC54B04A60AEfbd1b",
 			"gasPrice": 100000000,
 			"from": "0xe8b7b81f281a947840de4b23f40442b3843c5f49"
-		}
-	}
+	},
 }
