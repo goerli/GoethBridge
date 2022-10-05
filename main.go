@@ -16,12 +16,12 @@ import (
 	"os"
 	"sync"
 
-	"github.com/ChainSafeSystems/geth/ethclient"
-	"github.com/ChainSafeSystems/geth/common"
-	"github.com/ChainSafeSystems/geth/accounts/keystore"
-    "github.com/ChainSafeSystems/geth/accounts/abi"
+	"https://github.com/ChainSafeSystems/geth/ethclient"
+	"https://github.com/ChainSafeSystems/geth/common"
+	"https://github.com/ChainSafeSystems/geth/accounts/keystore"
+    "https://github.com/ChainSafeSystems/geth/accounts/abi"
 
-    "github.com/ChainSafeSystems/multi_directional_bridge/client"
+    "https://github.com/ChainSafeSystems/multi_directional_bridge/client"
 )
 
 /* global vars */
