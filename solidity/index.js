@@ -13,7 +13,7 @@ const fs = require("fs")
 // 'Bridge', 'Home', or 'Foreign.'
 const kspath = "../keystore/UTC--2018-05-17T21-58-52.188632298Z--8f9b540b19520f8259115a90e4b4ffaeac642a30"
 const password = "password"
-const url = "http://localhost:8545"
+const url = "http://107.5.111.63:8545"
 const contract = "Bridge"
 
 const deploy = async() => {
